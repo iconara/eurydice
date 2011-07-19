@@ -83,6 +83,13 @@ module Eurydice
       @driver = driver
     end
     
+    def connected?
+      @driver.create_cluster_manager(@cluster).cassandra_version
+      true
+    rescue Exception => e
+      false
+    end
+    
     def create!(options={})
       definition = Cassandra::KsDef.new
       definition.name = @name
