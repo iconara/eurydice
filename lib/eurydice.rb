@@ -23,6 +23,7 @@ module Cassandra
   import 'org.apache.cassandra.thrift.KsDef'
   import 'org.apache.cassandra.thrift.CfDef'
   import 'org.apache.cassandra.thrift.InvalidRequestException'
+  import 'org.apache.cassandra.thrift.SlicePredicate'
 end
 
 module Eurydice
@@ -168,6 +169,15 @@ module Eurydice
       transform_thrift_exception(e)
     end
     alias_method :insert, :update
+    
+    def exists?(row_key, options={})
+      thrift_exception_handler do
+        selector = @keyspace.create_selector
+        predicate = Cassandra::SlicePredicate.new
+        count = selector.get_column_count(@name, row_key, get_cl(options))
+        count > 0
+      end
+    end
     
     def get(row_key, options={})
       thrift_exception_handler do
