@@ -208,6 +208,11 @@ module Eurydice
     
   private
   
+    def get_cl(options)
+      cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
+      CONSISTENCY_LEVELS[cl]
+    end
+  
     CONSISTENCY_LEVELS = {
       :one    => Cassandra::ConsistencyLevel::ONE,
       :quorum => Cassandra::ConsistencyLevel::QUORUM,
