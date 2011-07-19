@@ -188,12 +188,7 @@ module Eurydice
         if columns.empty?
           nil
         else
-          columns.reduce({}) do |acc, column|
-            key   = String.from_java_bytes(column.get_name)
-            value = String.from_java_bytes(column.get_value)
-            acc[key] = value
-            acc
-          end
+          columns_to_h(columns)
         end
       end
     end
@@ -202,13 +197,36 @@ module Eurydice
       thrift_exception_handler do
         selector = @keyspace.create_selector
         column = selector.get_column_from_row(@name, row_key, column_key, get_cl(options))
-        selector.class.get_column_string_value(column)
+        String.from_java_bytes(column.get_value)
       end
     rescue NotFoundError => e
       nil
     end
     
+    def get_column_multi(row_keys, column_key, options={})
+      thrift_exception_handler do
+        selector = @keyspace.create_selector
+        column_predicate = Cassandra::SlicePredicate.new
+        column_predicate.addToColumn_names(Pelops::Bytes.new(column_key.to_java_bytes).get_bytes)
+        byte_row_keys = row_keys.map { |rk| Pelops::Bytes.new(rk.to_java_bytes) }
+        result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+        result.reduce({}) do |acc, (row_key, columns)|
+          acc[String.from_java_bytes(row_key.to_byte_array)] = columns_to_h(columns)
+          acc
+        end
+      end
+    end
+    
   private
+  
+    def columns_to_h(columns)
+      columns.reduce({}) do |acc, column|
+        key   = String.from_java_bytes(column.get_name)
+        value = String.from_java_bytes(column.get_value)
+        acc[key] = value
+        acc
+      end
+    end
   
     def get_cl(options)
       cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
