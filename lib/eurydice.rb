@@ -13,6 +13,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.Cluster'
   import 'org.scale7.cassandra.pelops.Pelops'
   import 'org.scale7.cassandra.pelops.Selector'
+  import 'org.scale7.cassandra.pelops.Bytes'
   import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
   import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
 end
@@ -160,13 +161,14 @@ module Eurydice
     end
     
     def update(row_key, properties, options={})
-      cl = options[:consistency_level] || CONSISTENCY_LEVELS[:one]
-      mutator = @keyspace.create_mutator
-      columns = properties.map { |k, v| mutator.new_column(k.to_s, v.to_s) }
-      mutator.write_columns(@name, row_key, columns)
-      mutator.execute(cl)
-    rescue Exception => e
-      transform_thrift_exception(e)
+      thrift_exception_handler do
+        mutator = @keyspace.create_mutator
+        columns = properties.map do |k, v| 
+          mutator.new_column(Pelops::Bytes.new(k.to_s.to_java_bytes), Pelops::Bytes.new(v.to_s.to_java_bytes))
+        end
+        mutator.write_columns(@name, row_key, columns)
+        mutator.execute(get_cl(options))
+      end
     end
     alias_method :insert, :update
     
