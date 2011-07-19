@@ -14,6 +14,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.Pelops'
   import 'org.scale7.cassandra.pelops.Selector'
   import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
+  import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
 end
 
 module Cassandra
@@ -41,6 +42,8 @@ module Eurydice
   
   class KeyspaceExistsError < InvalidRequestError; end
   
+  class NotFoundError < EurydiceError; end
+  
   module ExceptionHelpers
     def transform_thrift_exception(e)
       if e.respond_to?(:cause)
@@ -54,9 +57,17 @@ module Eurydice
           else InvalidRequestError
           end
           raise error_class, message, backtrace
+        when Pelops::NotFoundException
+          raise NotFoundError, e.cause.message, e.backtrace
         end
       end
       raise e
+    end
+    
+    def thrift_exception_handler
+      yield
+    rescue Exception => e
+      transform_thrift_exception(e)
     end
   end
   
@@ -120,22 +131,24 @@ module Eurydice
     end
     
     def create!(options={})
-      definition = Cassandra::CfDef.new
-      definition.keyspace = @keyspace.name
-      definition.name = @name
-      @keyspace.column_family_manger.add_column_family(definition)
-    rescue Exception => e
-      transform_thrift_exception(e)
+      thrift_exception_handler do
+        definition = Cassandra::CfDef.new
+        definition.keyspace = @keyspace.name
+        definition.name = @name
+        @keyspace.column_family_manger.add_column_family(definition)
+      end
     end
     
     def drop!
-      @keyspace.column_family_manger.drop_column_family(@name)
-    rescue Exception => e
-      transform_thrift_exception(e)
+      thrift_exception_handler do
+        @keyspace.column_family_manger.drop_column_family(@name)
+      end
     end
     
     def truncate!
-      @keyspace.column_family_manger.truncate_column_family(@name)
+      thrift_exception_handler do
+        @keyspace.column_family_manger.truncate_column_family(@name)
+      end
     end
     
     def update(row_key, properties, options={})
@@ -150,21 +163,30 @@ module Eurydice
     alias_method :insert, :update
     
     def get(row_key, options={})
-      cl = options[:consistency_level] || CONSISTENCY_LEVELS[:one]
-      selector = @keyspace.create_selector
-      columns = selector.get_columns_from_row(@name, row_key, false, cl)
-      if columns.empty?
-        nil
-      else
-        columns.reduce({}) do |acc, column|
-          key = selector.class.get_column_string_name(column)
-          value = selector.class.get_column_string_value(column)
-          acc[key] = value
-          acc
+      thrift_exception_handler do
+        selector = @keyspace.create_selector
+        columns = selector.get_columns_from_row(@name, row_key, false, get_cl(options))
+        if columns.empty?
+          nil
+        else
+          columns.reduce({}) do |acc, column|
+            key   = String.from_java_bytes(column.get_name)
+            value = String.from_java_bytes(column.get_value)
+            acc[key] = value
+            acc
+          end
         end
       end
-    rescue Exception => e
-      transform_thrift_exception(e)
+    end
+    
+    def get_column(row_key, column_key, options={})
+      thrift_exception_handler do
+        selector = @keyspace.create_selector
+        column = selector.get_column_from_row(@name, row_key, column_key, get_cl(options))
+        selector.class.get_column_string_value(column)
+      end
+    rescue NotFoundError => e
+      nil
     end
     
   private
