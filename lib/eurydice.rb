@@ -120,6 +120,10 @@ module Eurydice
     def create_selector
       @driver.create_selector(@pool_name)
     end
+    
+    def create_row_deletor
+      @driver.create_row_deletor(@pool_name)
+    end
 
     def keyspace_manager
       @keyspace_manager ||= @driver.create_keyspace_manager(@cluster)
@@ -157,6 +161,13 @@ module Eurydice
     def truncate!
       thrift_exception_handler do
         @keyspace.column_family_manger.truncate_column_family(@name)
+      end
+    end
+    
+    def delete(row_key, options={})
+      thrift_exception_handler do
+        deletor = @keyspace.create_row_deletor
+        deletor.delete_row(@name, row_key, get_cl(options))
       end
     end
     
