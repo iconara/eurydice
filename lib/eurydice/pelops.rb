@@ -22,13 +22,20 @@ module Cassandra
 end
 
 module Eurydice
-  def self.connect(keyspace_name, host='localhost', port=9160, pool_name='eurydice')
+  def self.connect(options={})
+    host = options.fetch(:host, 'localhost')
+    port = options.fetch(:port, 9160)
+    pool_name = options.fetch(:pool_name, 'eurydice')
+    Cluster.new(Pelops::Cluster.new(host, port))
+  end
+  
+  def self.keyspace(keyspace_name, host='localhost', port=9160, pool_name='eurydice')
     cluster = Pelops::Cluster.new(host, port)
     Pelops::Pelops.add_pool(pool_name, cluster, keyspace_name)
     Keyspace.new(keyspace_name, cluster, pool_name)
   end
   
-  def self.disconnect
+  def self.disconnect!
     Pelops::Pelops.shutdown
   end
 
@@ -59,15 +66,9 @@ module Eurydice
     end
   end
   
-  class Keyspace
-    include ExceptionHelpers
-    
-    attr_reader :name
-    
-    def initialize(name, cluster, pool_name, driver=Pelops::Pelops)
-      @name = name
+  class Cluster
+    def initialize(cluster, driver=Pelops::Pelops)
       @cluster = cluster
-      @pool_name = pool_name
       @driver = driver
     end
     
@@ -78,15 +79,58 @@ module Eurydice
       false
     end
     
+    def keyspace(keyspace_name, options={})
+      pool_name = options.fetch(:pool_name, "eurydice_#{keyspace_name}_pool")
+      create = options.fetch(:create, true)
+      Pelops::Pelops.add_pool(pool_name, @cluster, keyspace_name)
+      keyspace = Keyspace.new(keyspace_name, @cluster, pool_name, @driver)
+      keyspace.create! if create && !keyspace.exists?
+      keyspace
+    end
+    
+    def keyspaces
+      keyspace_manager.keyspace_names.map { |ks_def| ks_def.name }
+    end
+    
+  private
+  
+    def keyspace_manager
+      @keyspace_manager ||= @driver.create_keyspace_manager(@cluster)
+    end
+  end
+  
+  class Keyspace
+    include ExceptionHelpers
+    
+    attr_reader :name
+    
+    def initialize(name, cluster, pool_name, driver)
+      @name = name
+      @cluster = cluster
+      @pool_name = pool_name
+      @driver = driver
+    end
+    
+    def definition(reload=false)
+      thrift_exception_handler do
+        @definition = nil if reload
+        @definition ||= ks_def_to_h(keyspace_manager.get_keyspace_schema(@name))
+      end
+    end
+        
+    def exists?
+      keyspace_manager.keyspace_names.map { |ks_def| ks_def.name }.include?(@name)
+    end
+    
     def create!(options={})
-      definition = Cassandra::KsDef.new
-      definition.name = @name
-      definition.strategy_class = options.fetch(:strategy_class, 'org.apache.cassandra.locator.LocalStrategy')
-      definition.cf_defs = java.util.Collections.emptyList
-      keyspace_manager.add_keyspace(definition)
-      @driver.add_pool(@pool_name, @cluster, @name)
-    rescue Exception => e
-      transform_thrift_exception(e)
+      thrift_exception_handler do
+        definition = Cassandra::KsDef.new
+        definition.name = @name
+        definition.strategy_class = options.fetch(:strategy_class, 'org.apache.cassandra.locator.LocalStrategy')
+        definition.cf_defs = java.util.Collections.emptyList
+        keyspace_manager.add_keyspace(definition)
+        @driver.add_pool(@pool_name, @cluster, @name)
+      end
     end
     
     def drop!
@@ -95,8 +139,15 @@ module Eurydice
       transform_thrift_exception(e)
     end
     
-    def column_family(name)
-      ColumnFamily.new(self, name)
+    def column_families(reload=false)
+      definition(reload)[:column_families].keys
+    end
+    
+    def column_family(name, options={})
+      create = options.fetch(:create, true)
+      cf = ColumnFamily.new(self, name)
+      cf.create! if create && !cf.exists?
+      cf
     end
     
     def create_mutator
@@ -118,6 +169,24 @@ module Eurydice
     def column_family_manger
       @column_family_manger ||= @driver.create_column_family_manager(@cluster, @name)
     end
+    
+  private
+    
+    def ks_def_to_h(ks_def)
+      {
+        :name => ks_def.getName,
+        :strategy_class => ks_def.getStrategy_class,
+        :strategy_options => ks_def.getStrategy_options,
+        :column_families => Hash[ks_def.getCf_defsIterator.map { |cf_def| cf_h = cf_def_to_h(cf_def); [cf_h[:name], cf_h] }]
+      }
+    end
+    
+    def cf_def_to_h(cf_def)
+      {
+        :name => cf_def.getName,
+        :default_validation_class => cf_def.getDefault_validation_class
+      }
+    end
   end
   
   class ColumnFamily
@@ -129,11 +198,21 @@ module Eurydice
       @keyspace, @name = keyspace, name
     end
     
+    def definition(reload=true)
+      @definition = nil if reload
+      @definition ||= @keyspace.definition(true)[:column_families][@name]
+    end
+    
+    def exists?
+      !!definition(true)
+    end
+    
     def create!(options={})
       thrift_exception_handler do
         definition = Cassandra::CfDef.new
         definition.keyspace = @keyspace.name
         definition.name = @name
+        definition.default_validation_class = options[:default_validation_class] if options.key?(:default_validation_class)
         @keyspace.column_family_manger.add_column_family(definition)
       end
     end
@@ -157,10 +236,26 @@ module Eurydice
       end
     end
     
+    def delete_column(row_key, column_key, options={})
+      thrift_exception_handler do
+        mutator = @keyspace.create_mutator
+        mutator.delete_column(@name, row_key, Pelops::Bytes.new(column_key.to_s.to_java_bytes))
+        mutator.execute(get_cl(options))
+      end
+    end
+    
+    def delete_columns(row_key, column_keys, options={})
+      thrift_exception_handler do
+        mutator = @keyspace.create_mutator
+        mutator.delete_columns(@name, row_key, column_keys.map { |k| Pelops::Bytes.new(k.to_s.to_java_bytes) })
+        mutator.execute(get_cl(options))
+      end
+    end
+    
     def update(row_key, properties, options={})
       thrift_exception_handler do
         mutator = @keyspace.create_mutator
-        columns = properties.map do |k, v| 
+        columns = properties.map do |k, v|
           mutator.new_column(Pelops::Bytes.new(k.to_s.to_java_bytes), Pelops::Bytes.new(v.to_s.to_java_bytes))
         end
         mutator.write_columns(@name, row_key, columns)
@@ -169,7 +264,7 @@ module Eurydice
     end
     alias_method :insert, :update
     
-    def exists?(row_key, options={})
+    def key?(row_key, options={})
       thrift_exception_handler do
         selector = @keyspace.create_selector
         predicate = Cassandra::SlicePredicate.new
@@ -177,6 +272,7 @@ module Eurydice
         count > 0
       end
     end
+    alias_method :row_exists?, :key?
     
     def get(row_key, options={})
       thrift_exception_handler do
@@ -208,7 +304,8 @@ module Eurydice
         byte_row_keys = row_keys.map { |rk| Pelops::Bytes.new(rk.to_java_bytes) }
         result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
         result.reduce({}) do |acc, (row_key, columns)|
-          acc[String.from_java_bytes(row_key.to_byte_array)] = columns_to_h(columns)
+          columns_h = columns_to_h(columns)
+          acc[String.from_java_bytes(row_key.to_byte_array)] = columns_h unless columns_h.empty?
           acc
         end
       end
