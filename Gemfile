@@ -4,3 +4,4 @@ gemspec
 
 gem 'jruby-openssl'
 gem 'rake'
+gem 'rspec'
