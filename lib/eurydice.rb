@@ -137,7 +137,7 @@ module Eurydice
   class ColumnFamily
     include ExceptionHelpers
     
-    attr_reader :name
+    attr_reader :name, :keyspace
     
     def initialize(keyspace, name)
       @keyspace, @name = keyspace, name
