@@ -38,14 +38,18 @@ module Eurydice
         when Cassandra::InvalidRequestException, Pelops::InvalidRequestException
           message = e.cause.why
           backtrace = e.backtrace
-          error_class = case message
-          when /Keyspace already exists/
-          then KeyspaceExistsError
-          else InvalidRequestError
+          error_class = begin
+            case message
+            when /Keyspace already exists/
+            then KeyspaceExistsError
+            else InvalidRequestError
+            end
           end
           raise error_class, message, backtrace
         when Pelops::NotFoundException
           raise NotFoundError, e.cause.message, e.backtrace
+        when Thrift::TTransportException
+          raise TimeoutError, e.cause.message, e.backtrace
         end
       end
       raise e
