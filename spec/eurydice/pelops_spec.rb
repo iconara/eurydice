@@ -7,6 +7,7 @@ module Eurydice
   describe Eurydice do
     before do
       @cluster = Eurydice.connect
+      @keyspace_name = "eurydice_test_space_#{rand(1000)}"
     end
 
     describe Cluster do
@@ -16,18 +17,19 @@ module Eurydice
     
       describe '#keyspace' do
         before do
-          if @cluster.keyspaces.include?('eurydice_test_space')
-            @cluster.keyspace('eurydice_test_space').drop!
+          if @cluster.keyspaces.include?(@keyspace_name)
+            sleep(1) # dropping too soon after creating confuses Cassandra
+            @cluster.keyspace(@keyspace_name).drop!
           end
         end
       
         it 'creates a keyspace' do
-          keyspace = @cluster.keyspace('eurydice_test_space')
+          keyspace = @cluster.keyspace(@keyspace_name)
           keyspace.exists?.should be_true
         end
     
         it 'defers the creation of a keyspace with :create => false' do
-          keyspace = @cluster.keyspace('eurydice_test_space', :create => false)
+          keyspace = @cluster.keyspace(@keyspace_name, :create => false)
           keyspace.exists?.should be_false
           keyspace.create!
           keyspace.exists?.should be_true
@@ -37,14 +39,15 @@ module Eurydice
   
     describe Keyspace do
       before do
-        if @cluster.keyspaces.include?('eurydice_test_space')
-          @cluster.keyspace('eurydice_test_space').drop!
+        if @cluster.keyspaces.include?(@keyspace_name)
+          sleep(1) # dropping too soon after creating confuses Cassandra
+          @cluster.keyspace(@keyspace_name).drop!
         end
       end
       
       describe '#create!' do
         it 'creates a keyspace with a specific strategy class' do
-          keyspace = @cluster.keyspace('eurydice_test_space', :create => false)
+          keyspace = @cluster.keyspace(@keyspace_name, :create => false)
           keyspace.create!(:strategy_class => 'org.apache.cassandra.locator.NetworkTopologyStrategy')
           keyspace.definition(true)[:strategy_class].should == 'org.apache.cassandra.locator.NetworkTopologyStrategy'
         end
@@ -52,7 +55,8 @@ module Eurydice
     
       describe '#drop!' do
         it 'drops a keyspace' do
-          keyspace = @cluster.keyspace('eurydice_test_space')
+          keyspace = @cluster.keyspace(@keyspace_name)
+          sleep(1) # dropping too soon after creating confuses Cassandra
           keyspace.drop!
           keyspace.exists?.should be_false
         end
@@ -60,8 +64,8 @@ module Eurydice
       
       describe '#definition' do
         it 'returns keyspace metadata' do
-          definition = @cluster.keyspace('eurydice_test_space').definition
-          definition[:name].should == 'eurydice_test_space'
+          definition = @cluster.keyspace(@keyspace_name).definition
+          definition[:name].should == @keyspace_name
           definition[:strategy_class].should == 'org.apache.cassandra.locator.LocalStrategy'
         end
       end
@@ -69,8 +73,9 @@ module Eurydice
   
     describe ColumnFamily do
       before do
-        @keyspace = @cluster.keyspace('eurydice_test_space')
+        @keyspace = @cluster.keyspace(@keyspace_name)
         if @keyspace.column_families.include?('test_family')
+          sleep(1) # dropping too soon after creating confuses Cassandra
           @keyspace.column_family('test_family').drop!
         end
       end
@@ -150,6 +155,7 @@ module Eurydice
       describe '#drop!' do
         it 'drops the column family' do
           cf = @keyspace.column_family('test_family')
+          sleep(1) # dropping soon after creating confuses Cassandra
           cf.drop!
           cf.exists?.should_not be_true
         end
