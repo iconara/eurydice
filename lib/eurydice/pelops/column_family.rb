@@ -4,6 +4,7 @@ module Eurydice
   module Pelops
     class ColumnFamily
       include ExceptionHelpers
+      include ByteHelpers
     
       attr_reader :name, :keyspace
     
@@ -59,7 +60,7 @@ module Eurydice
       def delete_column(row_key, column_key, options={})
         thrift_exception_handler do
           mutator = @keyspace.create_mutator
-          mutator.delete_column(@name, row_key, ::Pelops::Bytes.new(column_key.to_s.to_java_bytes))
+          mutator.delete_column(@name, row_key, to_pelops_bytes(column_key))
           mutator.execute(get_cl(options))
         end
       end
@@ -67,7 +68,7 @@ module Eurydice
       def delete_columns(row_key, column_keys, options={})
         thrift_exception_handler do
           mutator = @keyspace.create_mutator
-          mutator.delete_columns(@name, row_key, column_keys.map { |k| ::Pelops::Bytes.new(k.to_s.to_java_bytes) })
+          mutator.delete_columns(@name, row_key, column_keys.map { |k| to_pelops_bytes(k) })
           mutator.execute(get_cl(options))
         end
       end
@@ -76,7 +77,7 @@ module Eurydice
         thrift_exception_handler do
           mutator = @keyspace.create_mutator
           columns = properties.map do |k, v|
-            mutator.new_column(::Pelops::Bytes.new(k.to_s.to_java_bytes), ::Pelops::Bytes.new(v.to_s.to_java_bytes))
+            mutator.new_column(to_pelops_bytes(k), to_pelops_bytes(v))
           end
           mutator.write_columns(@name, row_key, columns)
           mutator.execute(get_cl(options))
@@ -110,7 +111,7 @@ module Eurydice
         thrift_exception_handler do
           selector = @keyspace.create_selector
           column = selector.get_column_from_row(@name, row_key, column_key, get_cl(options))
-          String.from_java_bytes(column.get_value)
+          byte_array_to_s(column.get_value)
         end
       rescue NotFoundError => e
         nil
@@ -120,12 +121,12 @@ module Eurydice
         thrift_exception_handler do
           selector = @keyspace.create_selector
           column_predicate = Cassandra::SlicePredicate.new
-          column_predicate.addToColumn_names(::Pelops::Bytes.new(column_key.to_java_bytes).get_bytes)
-          byte_row_keys = row_keys.map { |rk| ::Pelops::Bytes.new(rk.to_java_bytes) }
+          column_predicate.addToColumn_names(to_nio_bytes(column_key))
+          byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
           result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
           result.reduce({}) do |acc, (row_key, columns)|
             columns_h = columns_to_h(columns)
-            acc[String.from_java_bytes(row_key.to_byte_array)] = columns_h unless columns_h.empty?
+            acc[pelops_bytes_to_s(row_key)] = columns_h unless columns_h.empty?
             acc
           end
         end
@@ -135,8 +136,8 @@ module Eurydice
   
       def columns_to_h(columns)
         columns.reduce({}) do |acc, column|
-          key   = String.from_java_bytes(column.get_name)
-          value = String.from_java_bytes(column.get_value)
+          key   = byte_array_to_s(column.get_name)
+          value = byte_array_to_s(column.get_value)
           acc[key] = value
           acc
         end

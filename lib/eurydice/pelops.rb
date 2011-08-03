@@ -36,6 +36,30 @@ module Eurydice
       ::Pelops::Pelops.shutdown
     end
 
+    module ByteHelpers
+      extend self
+      
+      def to_pelops_bytes(str)
+        ::Pelops::Bytes.new(str.to_s.to_java_bytes)
+      end
+      
+      def to_nio_bytes(str)
+        to_pelops_bytes(str).bytes
+      end
+      
+      def pelops_bytes_to_s(pb)
+        String.from_java_bytes(pb.to_byte_array)
+      end
+      
+      def nio_bytes_to_s(nb)
+        pelops_bytes_to_s(::Pelops::Bytes.new(nb))
+      end
+      
+      def byte_array_to_s(ba)
+        String.from_java_bytes(ba)
+      end
+    end
+
     module ExceptionHelpers
       def transform_thrift_exception(e)
         if e.respond_to?(:cause)
