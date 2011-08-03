@@ -100,9 +100,8 @@ module Eurydice
           selector = @keyspace.create_selector
           columns = selector.get_columns_from_row(@name, row_key, false, get_cl(options))
           if columns.empty?
-            nil
-          else
-            columns_to_h(columns)
+          then nil
+          else columns_to_h(columns)
           end
         end
       end
@@ -128,6 +127,38 @@ module Eurydice
             columns_h = columns_to_h(columns)
             acc[pelops_bytes_to_s(row_key)] = columns_h unless columns_h.empty?
             acc
+          end
+        end
+      end
+      
+      def get_multi(row_keys, options={})
+        thrift_exception_handler do
+          selector = @keyspace.create_selector
+          column_predicate = Cassandra::SlicePredicate.new
+          column_predicate.slice_range = Cassandra::SliceRange.new
+          column_predicate.slice_range.set_start(to_byte_array(''))
+          column_predicate.slice_range.set_finish(to_byte_array(''))
+          byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
+          result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+          result.reduce({}) do |acc, (row_key, columns)|
+            columns_h = columns_to_h(columns)
+            acc[pelops_bytes_to_s(row_key)] = columns_h unless columns_h.empty?
+            acc
+          end
+        end
+      end
+      
+      def get_column_range(row_key, start_column_key, end_column_key, options={})
+        thrift_exception_handler do
+          selector = @keyspace.create_selector
+          column_predicate = Cassandra::SlicePredicate.new
+          column_predicate.slice_range = Cassandra::SliceRange.new
+          column_predicate.slice_range.set_start(to_byte_array(start_column_key))
+          column_predicate.slice_range.set_finish(to_byte_array(end_column_key))
+          columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+          if columns.empty?
+          then nil
+          else columns_to_h(columns)
           end
         end
       end

@@ -275,7 +275,49 @@ module Eurydice
             @cf.get_column_multi(%w(ABC GHI), 'xyz').should == {}
           end
         end
-    
+        
+        describe '#get_multi' do
+          it 'loads multiple rows' do
+            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
+            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+            @cf.get_multi(%w(ABC GHI)).should == {
+              'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
+              'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
+            }
+          end
+
+          it 'does not include rows that do not exist in the result' do
+            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
+            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+            @cf.get_multi(%w(ABC GHI XYZ)).should == {
+              'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
+              'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
+            }
+          end
+
+          it 'returns an empty hash if no rows exist' do
+            @cf.get_multi(%w(ABC GHI XYZ)).should == {}
+          end
+        end
+
+        describe '#get_column_range' do
+          it 'loads all columns in a range' do
+            @cf.insert('ABC', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D')
+            @cf.get_column_range('ABC', 'b', 'c').should == {'b' => 'B', 'c' => 'C'}
+          end
+          
+          it 'returns nil if no row was found' do
+            @cf.get_column_range('ABC', 'b', 'c').should be_nil
+          end
+
+          it 'returns nil if no columns were found' do
+            @cf.insert('ABC', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D')
+            @cf.get_column_range('ABC', 'x', 'z').should be_nil
+          end
+        end
+
         describe '#delete' do
           it 'removes a row' do
             @cf.insert('ABC', 'xyz' => 'abc')

@@ -47,6 +47,10 @@ module Eurydice
         to_pelops_bytes(str).bytes
       end
       
+      def to_byte_array(str)
+        str.to_java_bytes
+      end
+      
       def pelops_bytes_to_s(pb)
         String.from_java_bytes(pb.to_byte_array)
       end

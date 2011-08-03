@@ -13,6 +13,7 @@ module Cassandra
   import 'org.apache.cassandra.thrift.ColumnDef'
   import 'org.apache.cassandra.thrift.InvalidRequestException'
   import 'org.apache.cassandra.thrift.SlicePredicate'
+  import 'org.apache.cassandra.thrift.SliceRange'
   
   CONSISTENCY_LEVELS = {
     :one    => Cassandra::ConsistencyLevel::ONE,
