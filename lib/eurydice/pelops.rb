@@ -106,7 +106,8 @@ module Eurydice
     def definition(reload=false)
       thrift_exception_handler do
         @definition = nil if reload
-        @definition ||= ks_def_to_h(keyspace_manager.get_keyspace_schema(@name))
+        @definition ||= keyspace_manager.get_keyspace_schema(@name).to_h
+        @definition
       end
     end
         
@@ -160,24 +161,6 @@ module Eurydice
     
     def column_family_manger
       @column_family_manger ||= @driver.create_column_family_manager(@cluster, @name)
-    end
-    
-  private
-    
-    def ks_def_to_h(ks_def)
-      {
-        :name => ks_def.getName,
-        :strategy_class => ks_def.getStrategy_class,
-        :strategy_options => ks_def.getStrategy_options,
-        :column_families => Hash[ks_def.getCf_defsIterator.map { |cf_def| cf_h = cf_def_to_h(cf_def); [cf_h[:name], cf_h] }]
-      }
-    end
-    
-    def cf_def_to_h(cf_def)
-      {
-        :name => cf_def.getName,
-        :default_validation_class => cf_def.getDefault_validation_class
-      }
     end
   end
   
