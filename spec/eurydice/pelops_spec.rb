@@ -140,12 +140,6 @@ module Eurydice
           cf.definition(true)[:column_metadata]['xyz'][:index_name].should == 'abc'
         end
         
-        it 'defaults to using :keys as the index type' do
-          cf = @keyspace.column_family('test_family', :create => false)
-          cf.create!(:column_metadata => {'xyz' => {:index_name => 'abc', :validation_class => :ascii}})
-          cf.definition(true)[:column_metadata]['xyz'][:index_type].should == :keys
-        end
-        
         it 'creates a column family with a specific column type' do
           cf = @keyspace.column_family('test_family', :create => false)
           cf.create!(:column_type => :super)

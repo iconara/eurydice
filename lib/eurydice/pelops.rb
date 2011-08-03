@@ -121,11 +121,8 @@ module Eurydice
     
     def create!(options={})
       thrift_exception_handler do
-        definition = Cassandra::KsDef.new
-        definition.name = @name
-        definition.strategy_class = options.fetch(:strategy_class, 'org.apache.cassandra.locator.LocalStrategy')
-        definition.cf_defs = java.util.Collections.emptyList
-        keyspace_manager.add_keyspace(definition)
+        ks_def = Cassandra::KsDef.from_h({:strategy_class => 'org.apache.cassandra.locator.LocalStrategy'}.merge(options).merge(:name => @name))
+        keyspace_manager.add_keyspace(ks_def)
         @driver.add_pool(@pool_name, @cluster, @name)
       end
     end
@@ -199,27 +196,7 @@ module Eurydice
     # * :index_type - defaults to :keys, which is also the only valid value
     def create!(options={})
       thrift_exception_handler do
-        definition = Cassandra::CfDef.new
-        definition.keyspace = @keyspace.name
-        definition.name = @name
-        definition.column_type = options[:column_type].to_s.capitalize if options.key?(:column_type)
-        [:default_validation_class, :comparator_type, :subcomparator_type].each do |property_name|
-          value = options[property_name]
-          if value
-            definition.send("#{property_name}=".to_sym, MARSHAL_TYPES.fetch(value, value))
-          end
-        end
-        if options.key?(:column_metadata)
-          definition.column_metadata = options[:column_metadata].map do |column_name, column_def_h|
-            column_def = Cassandra::ColumnDef.new
-            column_def.name = Pelops::Bytes.new(column_name.to_s.to_java_bytes).bytes
-            column_def.index_name = column_def_h[:index_name] if column_def_h.key?(:index_name)
-            column_def.index_type = INDEX_TYPES[column_def_h.fetch(:index_type, :keys)] if column_def_h.key?(:index_name)
-            column_def.validation_class = MARSHAL_TYPES.fetch(column_def_h[:validation_class], column_def_h[:validation_class]) if column_def_h.key?(:validation_class)
-            column_def
-          end
-        end
-        @keyspace.column_family_manger.add_column_family(definition)
+        @keyspace.column_family_manger.add_column_family(Cassandra::CfDef.from_h(options.merge(:keyspace => @keyspace.name, :name => @name)))
       end
     end
     
@@ -330,27 +307,7 @@ module Eurydice
   
     def get_cl(options)
       cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
-      CONSISTENCY_LEVELS[cl]
+      Cassandra::CONSISTENCY_LEVELS[cl]
     end
-    
-    CONSISTENCY_LEVELS = {
-      :one    => Cassandra::ConsistencyLevel::ONE,
-      :quorum => Cassandra::ConsistencyLevel::QUORUM,
-      :all    => Cassandra::ConsistencyLevel::ALL,
-      :any    => Cassandra::ConsistencyLevel::ANY
-    }.freeze
-
-    MARSHAL_TYPES = {
-      :bytes => 'org.apache.cassandra.db.marshal.BytesType'.freeze,
-      :ascii => 'org.apache.cassandra.db.marshal.AsciiType'.freeze,
-      :utf8 => 'org.apache.cassandra.db.marshal.UTF8Type'.freeze,
-      :long => 'org.apache.cassandra.db.marshal.LongType'.freeze,
-      :lexical_uuid => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
-      :time_uuid => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze
-    }.freeze
-
-    INDEX_TYPES = {
-      :keys => Cassandra::IndexType::KEYS
-    }.freeze
   end
 end
