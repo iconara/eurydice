@@ -87,11 +87,69 @@ module Eurydice
           cf.create!
           cf.exists?.should be_true
         end
+
+        marshal_types = {
+          'a fully qualified name' => 'org.apache.cassandra.db.marshal.UTF8Type',
+          'the package name omitted' => 'UTF8Type',
+          'an alias' => :utf8
+        }
+
+        context 'creating a column family with a specific comparator type' do
+          marshal_types.each do |desc, type|
+            it "with #{desc}" do
+              cf = @keyspace.column_family('test_family', :create => false)
+              cf.create!(:comparator_type => type)
+              cf.definition(true)[:comparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+            end
+          end
+        end
+
+        context 'creating a column family with a specific subcomparator type' do
+          marshal_types.each do |desc, type|
+            it "with #{desc}" do
+              cf = @keyspace.column_family('test_family', :create => false)
+              cf.create!(:column_type => :super, :subcomparator_type => type)
+              cf.definition(true)[:subcomparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+            end
+          end
+        end
+
+        context 'creating a column family with a specific default validation class' do
+          marshal_types.each do |desc, type|
+            it "with #{desc}" do
+              cf = @keyspace.column_family('test_family', :create => false)
+              cf.create!(:default_validation_class => type)
+              cf.definition(true)[:default_validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+            end
+          end
+        end
         
-        it 'creates a column family with a specific default validation class' do
+        context 'creating a column family with a specific validation class for a column' do
+          marshal_types.each do |desc, type|
+            it "with #{desc}" do
+              cf = @keyspace.column_family('test_family', :create => false)
+              cf.create!(:column_metadata => {'xyz' => {:validation_class => type}})
+              cf.definition(true)[:column_metadata]['xyz'][:validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+            end
+          end
+        end
+        
+        it 'creates a column family with an index' do
           cf = @keyspace.column_family('test_family', :create => false)
-          cf.create!(:default_validation_class => 'org.apache.cassandra.db.marshal.AsciiType')
-          cf.definition(true)[:default_validation_class].should == 'org.apache.cassandra.db.marshal.AsciiType'
+          cf.create!(:column_metadata => {'xyz' => {:index_name => 'abc', :index_type => :keys, :validation_class => :ascii}})
+          cf.definition(true)[:column_metadata]['xyz'][:index_name].should == 'abc'
+        end
+        
+        it 'defaults to using :keys as the index type' do
+          cf = @keyspace.column_family('test_family', :create => false)
+          cf.create!(:column_metadata => {'xyz' => {:index_name => 'abc', :validation_class => :ascii}})
+          cf.definition(true)[:column_metadata]['xyz'][:index_type].should == :keys
+        end
+        
+        it 'creates a column family with a specific column type' do
+          cf = @keyspace.column_family('test_family', :create => false)
+          cf.create!(:column_type => :super)
+          cf.definition(true)[:column_type].should == :super
         end
       end
       
