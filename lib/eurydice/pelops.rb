@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'eurydice'
+require 'cassandra'
 
 
 module Pelops
@@ -10,15 +11,6 @@ module Pelops
   import 'org.scale7.cassandra.pelops.Bytes'
   import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
   import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
-end
-
-module Cassandra
-  import 'org.apache.cassandra.thrift.ConsistencyLevel'
-  import 'org.apache.cassandra.thrift.Column'
-  import 'org.apache.cassandra.thrift.KsDef'
-  import 'org.apache.cassandra.thrift.CfDef'
-  import 'org.apache.cassandra.thrift.InvalidRequestException'
-  import 'org.apache.cassandra.thrift.SlicePredicate'
 end
 
 module Eurydice
