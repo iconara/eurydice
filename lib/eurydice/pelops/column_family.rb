@@ -125,19 +125,13 @@ module Eurydice
       end
       
       def create_column_predicate(options)
-        Cassandra::SlicePredicate.new.tap do |column_predicate|
-          case options[:columns]
-          when Range
-            column_predicate.slice_range = Cassandra::SliceRange.new
-            column_predicate.slice_range.set_start(to_byte_array(options[:columns].begin))
-            column_predicate.slice_range.set_finish(to_byte_array(options[:columns].end))
-          when Array
-            column_predicate.column_names = options[:columns].map { |column_key| to_nio_bytes(column_key) }
-          else
-            column_predicate.slice_range = Cassandra::SliceRange.new
-            column_predicate.slice_range.set_start(to_byte_array(''))
-            column_predicate.slice_range.set_finish(to_byte_array(''))
-          end
+        case options[:columns]
+        when Range
+          ::Pelops::Selector.new_columns_predicate(to_pelops_bytes(options[:columns].begin), to_pelops_bytes(options[:columns].end), false, java.lang.Integer::MAX_VALUE)
+        when Array
+          ::Pelops::Selector.new_columns_predicate(*options[:columns].map { |col| to_pelops_bytes(col) })
+        else
+          ::Pelops::Selector.new_columns_predicate_all(false, java.lang.Integer::MAX_VALUE)
         end
       end
     
