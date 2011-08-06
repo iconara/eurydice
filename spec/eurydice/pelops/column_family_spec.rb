@@ -305,6 +305,7 @@ module Eurydice
           
           context 'with options' do
             it 'loads with a custom consistency level' do
+              # TODO: not sure how to test, this just tests that no error is raised
               @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
               @cf.get('ABC', :consistency_level => :quorum).should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
             end
@@ -323,6 +324,7 @@ module Eurydice
           end
     
           it 'loads with a custom consistency level' do
+            # TODO: not sure how to test, this just tests that no error is raised
             @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
             @cf.get_column('ABC', 'hello', :consistency_level => :quorum).should == 'world'
           end
@@ -390,6 +392,7 @@ module Eurydice
           end
           
           it 'loads with a custom consistency level' do
+            # TODO: not sure how to test, this just tests that no error is raised
             @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
             @cf.each_column('ABC', :consistency_level => :quorum) do |k, v|
             end
