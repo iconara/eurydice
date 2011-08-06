@@ -341,7 +341,67 @@ module Eurydice
             @cf.get_column('XYZ', 'abc').should be_nil
           end
         end
-  
+
+        describe '#each_column' do
+          before do
+            @cf.insert('ABC', Hash[('a'..'z').map { |a| [a, a.upcase] }.shuffle])
+          end
+          
+          it 'yields each column in a row' do
+            row = {}
+            @cf.each_column('ABC') do |k, v|
+              row[k] = v
+            end
+            row.should == Hash[('a'..'z').map { |a| [a, a.upcase] }]
+          end
+
+          it 'returns an Enumerator that yields each column in a row' do
+            row = {}
+            enum = @cf.each_column('ABC')
+            enum.each do |k, v|
+              row[k] = v
+            end
+            row.should == Hash[('a'..'z').map { |a| [a, a.upcase] }]
+          end
+          
+          it 'yields each column in reverse order with :reversed => true' do
+            column_keys = []
+            @cf.each_column('ABC', :reversed => true) do |k, v|
+              column_keys << k
+            end
+            column_keys.should == ('a'..'z').to_a.reverse
+          end
+          
+          it 'can start after a specified key' do
+            column_keys = []
+            @cf.each_column('ABC', :start_beyond => 'w') do |k, v|
+              column_keys << k
+            end
+            column_keys.should == ('x'..'z').to_a
+          end
+          
+          it 'can use a custom batch size' do
+            # TODO: not sure how to test, this just tests that no error is raised
+            row = {}
+            @cf.each_column('ABC', :batch_size => 2) do |k, v|
+              row[k] = v
+            end
+            row.should == Hash[('a'..'z').map { |a| [a, a.upcase] }]
+          end
+          
+          it 'loads with a custom consistency level' do
+            @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+            @cf.each_column('ABC', :consistency_level => :quorum) do |k, v|
+            end
+          end
+
+          it 'loads with a custom consistency level (:cl is an alias for :consistency_level)' do
+            @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+            @cf.each_column('ABC', :cl => :one) do |k, v|
+            end
+          end
+        end
+
         describe '#delete' do
           it 'removes a row' do
             @cf.insert('ABC', 'xyz' => 'abc')
