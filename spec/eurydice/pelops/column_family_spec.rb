@@ -200,11 +200,13 @@ module Eurydice
           end
     
           it 'writes with a custom consistency level' do
+            # TODO: not sure how to test, this just tests that no error is raised
             @cf.insert('ABC', {'xyz' => 'abc'}, {:consistency_level => :quorum})
             @cf.get('ABC').should == {'xyz' => 'abc'}
           end
 
           it 'writes with a custom consistency level (:cl is an alias for :consistency_level)' do
+            # TODO: not sure how to test, this just tests that no error is raised
             @cf.insert('ABC', {'xyz' => 'abc'}, {:cl => :one})
             @cf.get('ABC').should == {'xyz' => 'abc'}
           end
