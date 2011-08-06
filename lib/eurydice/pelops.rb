@@ -1,5 +1,6 @@
 # encoding: utf-8
 
+require 'pelops-jars'
 require 'eurydice'
 require 'cassandra'
 
