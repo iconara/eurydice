@@ -21,17 +21,6 @@ module Eurydice
         !!definition(true)
       end
     
-      # Valid (and implemented) options:
-      # * :comparator_type - the name of the class used to sort column keys
-      # * :subcomparator_type - same as :comparator_type but for the keys of subcolumns
-      # * :default_validation_class - the name of the class used to validate the column values
-      # * :column_type - :standard (default) or :super
-      # * :column_metadata - a hash with column names as keys, see below for valid options
-      #
-      # Valid options for column metadata:
-      # * :validation_class - the name of the class used to validate the column value, required if any options for the column are specified
-      # * :index_name - if set this column will be indexed and this is specifies the index name
-      # * :index_type - defaults to :keys, which is also the only valid value
       def create!(options={})
         thrift_exception_handler do
           @keyspace.column_family_manger.add_column_family(Cassandra::CfDef.from_h(options.merge(:keyspace => @keyspace.name, :name => @name)))
