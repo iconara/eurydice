@@ -34,6 +34,10 @@ module Cassandra
   class KsDef
     def self.from_h(h)
       ks_def = h.reduce(self.new) do |ks_def, (field_name, field_value)|
+        case field_name.to_sym
+        when :strategy_options
+          field_value = Hash[field_value.map { |k, v| [k.to_s, v.to_s] }]
+        end
         field = self::_Fields.find_by_name(field_name.to_s)
         ks_def.set_field_value(field, field_value)
         ks_def
@@ -45,12 +49,15 @@ module Cassandra
     def to_h
       self.class.metaDataMap.reduce({}) do |acc, (field, field_meta_data)|
         field_name = field.field_name.to_sym
+        field_value = get_field_value(field)
         case field_name.to_sym
         when :cf_defs
-          cf_hs = get_field_value(field).map { |cf_def| cf_def.to_h }
+          cf_hs = field_value.map { |cf_def| cf_def.to_h }
           acc[:column_families] = Hash[cf_hs.map { |cf_h| [cf_h[:name], cf_h] }]
+        when :strategy_options
+          acc[field_name] = Hash[field_value.map { |pair| [pair.first.to_sym, pair.last] }] # JRuby 1.6.1 Hash#map doesn't splat
         else
-          acc[field_name] = get_field_value(field)
+          acc[field_name] = field_value
         end
         acc
       end

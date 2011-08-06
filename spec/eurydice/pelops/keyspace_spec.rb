@@ -22,6 +22,12 @@ module Eurydice
           @keyspace.create!(:strategy_class => 'org.apache.cassandra.locator.NetworkTopologyStrategy')
           @keyspace.definition(true)[:strategy_class].should == 'org.apache.cassandra.locator.NetworkTopologyStrategy'
         end
+        
+        it 'creates a keyspace with specific strategy options' do
+          @keyspace = @cluster.keyspace(@keyspace_name, :create => false)
+          @keyspace.create!(:strategy_options => {:replication_factor => 2})
+          @keyspace.definition(true)[:strategy_options][:replication_factor].should == '2'
+        end
       end
   
       describe '#drop!' do
