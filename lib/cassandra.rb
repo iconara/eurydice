@@ -37,12 +37,16 @@ module Cassandra
         case field_name.to_sym
         when :strategy_options
           field_value = Hash[field_value.map { |k, v| [k.to_s, v.to_s] }]
+        when :column_families
+          field_name = 'cf_defs'
+          field_value = field_value.map { |cf_name, cf_def_h| CfDef.from_h(cf_def_h.merge(:name => cf_name, :keyspace => h[:name])) }
         end
         field = self::_Fields.find_by_name(field_name.to_s)
+        raise ArgumentError, %(No field named "#{field_name}") unless field
         ks_def.set_field_value(field, field_value)
         ks_def
       end
-      ks_def.cf_defs = java.util.Collections.emptyList
+      ks_def.cf_defs = java.util.Collections.emptyList unless ks_def.cf_defs
       ks_def
     end
     
@@ -55,7 +59,7 @@ module Cassandra
           cf_hs = field_value.map { |cf_def| cf_def.to_h }
           acc[:column_families] = Hash[cf_hs.map { |cf_h| [cf_h[:name], cf_h] }]
         when :strategy_options
-          acc[field_name] = Hash[field_value.map { |pair| [pair.first.to_sym, pair.last] }] # JRuby 1.6.1 Hash#map doesn't splat
+          acc[field_name] = Hash[field_value.map { |pair| [pair.first.to_sym, pair.last] }] # JRuby 1.6.1 Java Map doesn't splat when yielding
         else
           acc[field_name] = field_value
         end
@@ -82,6 +86,7 @@ module Cassandra
           end
         end
         field = self::_Fields.find_by_name(field_name.to_s)
+        raise ArgumentError, %(No field named "#{field_name}") unless field
         cf_def.set_field_value(field, field_value)
         cf_def
       end
@@ -116,6 +121,7 @@ module Cassandra
           field_value = MARSHAL_TYPES.fetch(field_value, field_value)
         end
         field = self::_Fields.find_by_name(field_name.to_s)
+        raise ArgumentError, %(No field named "#{field_name}") unless field
         col_def.set_field_value(field, field_value)
         col_def
       end
