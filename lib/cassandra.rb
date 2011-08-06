@@ -74,11 +74,7 @@ module Cassandra
         case field_name.to_sym
         when :column_type
           field_value = field_value.to_s.capitalize
-        when :default_validation_class
-          field_value = Cassandra::MARSHAL_TYPES.fetch(field_value, field_value)
-        when :comparator_type
-          field_value = Cassandra::MARSHAL_TYPES.fetch(field_value, field_value)
-        when :subcomparator_type
+        when :key_validation_class, :default_validation_class, :comparator_type, :subcomparator_type
           field_value = Cassandra::MARSHAL_TYPES.fetch(field_value, field_value)
         when :column_metadata
           field_value = field_value.map do |column_name, column_def_h|
