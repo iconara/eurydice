@@ -44,8 +44,13 @@ module Eurydice
         ::Pelops::Bytes::EMPTY
       end
       
-      def to_pelops_bytes(str)
-        ::Pelops::Bytes.new(str.to_s.to_java_bytes)
+      def to_pelops_bytes(obj, type=nil)
+        case type
+        when :long
+          ::Pelops::Bytes.from_long(obj)
+        else
+          ::Pelops::Bytes.new(obj.to_s.to_java_bytes)
+        end
       end
       
       def to_nio_bytes(str)
@@ -64,8 +69,13 @@ module Eurydice
         pelops_bytes_to_s(::Pelops::Bytes.new(nb))
       end
       
-      def byte_array_to_s(ba)
-        String.from_java_bytes(ba)
+      def byte_array_to_s(ba, type=nil)
+        case type
+        when :long
+          ::Pelops::Bytes.new(ba).to_long
+        else
+          String.from_java_bytes(ba)
+        end
       end
     end
 

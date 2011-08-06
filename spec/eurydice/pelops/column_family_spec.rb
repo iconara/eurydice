@@ -210,6 +210,18 @@ module Eurydice
             @cf.insert('ABC', {'xyz' => 'abc'}, {:cl => :one})
             @cf.get('ABC').should == {'xyz' => 'abc'}
           end
+          
+          context 'with explicit column data types' do
+            it 'writes integer columns keys as longs' do
+              @cf.insert('ABC', {42 => 'foo'}, :comparator => :long)
+              @cf.get('ABC', :comparator => :long).should == {42 => 'foo'}
+            end
+            
+            it 'writes integer values as longs' do
+              @cf.insert('ABC', {'xyz' => 3}, :validations => {'xyz' => :long})
+              @cf.get('ABC', :validations => {'xyz' => :long}).should == {'xyz' => 3}
+            end
+          end
         end
   
         describe '#get' do
@@ -418,7 +430,7 @@ module Eurydice
                 :index_type => :keys
               },
               'age' => {
-                :validation_class => :bytes,
+                :validation_class => :long,
                 :index_name => 'age_index',
                 :index_type => :keys
               }
@@ -426,23 +438,24 @@ module Eurydice
           end
           
           it 'loads rows by index' do
-            @cf.insert('user1', {'name' => 'sue', 'age' => '33'})
-            @cf.insert('user2', {'name' => 'phil', 'age' => '29'})
-            @cf.get_indexed('name', :==, 'sue').should == {'user1' => {'name' => 'sue', 'age' => '33'}}
+            @cf.insert('user1', {'name' => 'sue'})
+            @cf.insert('user2', {'name' => 'phil'})
+            @cf.get_indexed('name', :==, 'sue').should == {'user1' => {'name' => 'sue'}}
           end
           
           it 'loads rows by index (using :eq instead of :==)' do
-            @cf.insert('user1', {'name' => 'sue', 'age' => '33'})
-            @cf.insert('user2', {'name' => 'phil', 'age' => '29'})
-            @cf.get_indexed('name', :eq, 'sue').should == {'user1' => {'name' => 'sue', 'age' => '33'}}
+            @cf.insert('user1', {'name' => 'sue'})
+            @cf.insert('user2', {'name' => 'phil'})
+            @cf.get_indexed('name', :eq, 'sue').should == {'user1' => {'name' => 'sue'}}
           end
           
           it 'limits the number of returned rows' do
             names = %w(sue phil sam jim)
             100.times do |i|
-              @cf.insert("user:#{i.to_s.rjust(2, '0')}", {'name' => names[i % names.size]})
+              row = {'name' => names[i % names.size], 'age' => i % names.size}
+              @cf.insert("user:#{i}", row, :validations => {'age' => :long})
             end
-            @cf.get_indexed('name', :==, 'sam', :max_row_count => 2).should have(2).items
+            @cf.get_indexed('age', :==, 3, :max_row_count => 3, :validations => {'age' => :long}).should have(3).items
           end
           
           it 'raises an error if the index operator is not supported' do

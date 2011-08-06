@@ -64,9 +64,11 @@ module Eurydice
     
       def update(row_key, properties, options={})
         thrift_exception_handler do
+          types = options[:validations] || {}
+          key_type = options[:comparator]
           mutator = @keyspace.create_mutator
           columns = properties.map do |k, v|
-            mutator.new_column(to_pelops_bytes(k), to_pelops_bytes(v))
+            mutator.new_column(to_pelops_bytes(k, key_type), to_pelops_bytes(v, types[k]))
           end
           mutator.write_columns(@name, row_key, columns)
           mutator.execute(get_cl(options))
@@ -113,29 +115,31 @@ module Eurydice
           iterator = selector.iterate_columns_from_row(@name, to_pelops_bytes(row_key), start_beyond, reversed, batch_size, get_cl(options))
           if block_given?
             iterator.each do |column|
-              yield column_to_kv(column)
+              yield column_to_kv(column, options)
             end
           else
             Enumerator.new do |y|
               iterator.each do |column|
-                y << column_to_kv(column)
+                y << column_to_kv(column, options)
               end
             end
           end
         end
       end
       
-      def get_indexed(column_name, operator, value, options={})
+      def get_indexed(column_key, operator, value, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
           op = Cassandra::INDEX_OPERATORS[operator]
           max_rows = options.fetch(:max_row_count, 20)
+          types = options[:validations] || {}
+          key_type = options[:comparator]
           raise ArgumentError, %(Unsupported index operator: "#{operator}") unless op
-          index_expression = selector.class.new_index_expression(to_pelops_bytes(column_name), op, to_pelops_bytes(value))
+          index_expression = selector.class.new_index_expression(to_pelops_bytes(column_key, key_type), op, to_pelops_bytes(value, types[column_key]))
           index_clause = selector.class.new_index_clause(empty_pelops_bytes, max_rows, index_expression)
           column_predicate = create_column_predicate(options)
           rows = selector.get_indexed_columns(@name, index_clause, column_predicate, get_cl(options))
-          rows_to_h(rows)
+          rows_to_h(rows, options)
         end
       end
       
@@ -146,7 +150,7 @@ module Eurydice
           selector = @keyspace.create_selector
           column_predicate = create_column_predicate(options)
           columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
-          columns_to_h(columns)
+          columns_to_h(columns, options)
         end
       end
     
@@ -156,7 +160,7 @@ module Eurydice
           column_predicate = create_column_predicate(options)
           byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
           rows = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
-          rows_to_h(rows)
+          rows_to_h(rows, options)
         end
       end
       
@@ -173,28 +177,32 @@ module Eurydice
         end
       end
     
-      def rows_to_h(rows)
+      def rows_to_h(rows, options)
         rows.reduce({}) do |acc, (row_key, columns)|
-          columns_h = columns_to_h(columns)
+          columns_h = columns_to_h(columns, options)
           acc[pelops_bytes_to_s(row_key)] = columns_h if columns_h && !columns_h.empty?
           acc
         end
       end
   
-      def columns_to_h(columns)
+      def columns_to_h(columns, options)
         if columns.empty?
           nil
         else
           columns.reduce({}) do |acc, column|
-            key, value = column_to_kv(column)
+            key, value = column_to_kv(column, options)
             acc[key] = value
             acc
           end
         end
       end
       
-      def column_to_kv(column)
-        [byte_array_to_s(column.get_name), byte_array_to_s(column.get_value)]
+      def column_to_kv(column, options)
+        types = options[:validations] || {}
+        key_type = options[:comparator]
+        key = byte_array_to_s(column.get_name, key_type)
+        value = byte_array_to_s(column.get_value, types[key])
+        return key, value
       end
   
       def get_cl(options)
