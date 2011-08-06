@@ -4,27 +4,37 @@ require_relative '../../spec_helper'
 module Eurydice
   module Pelops
     describe ColumnFamily do
-      before do
+      before :all do
         @cluster = Eurydice.connect
         @keyspace_name = "eurydice_test_space_#{rand(1000)}"
-        @keyspace = @cluster.keyspace(@keyspace_name)
-        if @keyspace.column_families.include?('test_family')
-          sleep(1) # dropping too soon after creating confuses Cassandra
-          @keyspace.column_family('test_family').drop!
-        end
+        @keyspace = @cluster.keyspace(@keyspace_name, :create => false)
+        @keyspace.drop! rescue nil
+        @keyspace.create!
+      end
+      
+      after :all do
+        @keyspace.drop! rescue nil
       end
   
       describe '#create!' do
+        before do
+          @cf_name = "test_family_#{rand(1000)}"
+        end
+        
+        after do
+          @cf.drop! rescue nil
+        end
+        
         it 'can create a column family' do
-          cf = @keyspace.column_family('test_family')
-          cf.exists?.should be_true
+          @cf = @keyspace.column_family(@cf_name)
+          @cf.exists?.should be_true
         end
     
         it 'defers the creation of a keyspace with :create => false' do
-          cf = @keyspace.column_family('test_family', :create => false)
-          cf.exists?.should be_false
-          cf.create!
-          cf.exists?.should be_true
+          @cf = @keyspace.column_family(@cf_name, :create => false)
+          @cf.exists?.should be_false
+          @cf.create!
+          @cf.exists?.should be_true
         end
 
         marshal_types = {
@@ -36,9 +46,9 @@ module Eurydice
         context 'creating a column family with a specific comparator type' do
           marshal_types.each do |desc, type|
             it "with #{desc}" do
-              cf = @keyspace.column_family('test_family', :create => false)
-              cf.create!(:comparator_type => type)
-              cf.definition(true)[:comparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+              @cf = @keyspace.column_family(@cf_name, :create => false)
+              @cf.create!(:comparator_type => type)
+              @cf.definition(true)[:comparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
             end
           end
         end
@@ -46,9 +56,9 @@ module Eurydice
         context 'creating a column family with a specific subcomparator type' do
           marshal_types.each do |desc, type|
             it "with #{desc}" do
-              cf = @keyspace.column_family('test_family', :create => false)
-              cf.create!(:column_type => :super, :subcomparator_type => type)
-              cf.definition(true)[:subcomparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+              @cf = @keyspace.column_family(@cf_name, :create => false)
+              @cf.create!(:column_type => :super, :subcomparator_type => type)
+              @cf.definition(true)[:subcomparator_type].should == 'org.apache.cassandra.db.marshal.UTF8Type'
             end
           end
         end
@@ -56,9 +66,9 @@ module Eurydice
         context 'creating a column family with a specific default validation class' do
           marshal_types.each do |desc, type|
             it "with #{desc}" do
-              cf = @keyspace.column_family('test_family', :create => false)
-              cf.create!(:default_validation_class => type)
-              cf.definition(true)[:default_validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+              @cf = @keyspace.column_family(@cf_name, :create => false)
+              @cf.create!(:default_validation_class => type)
+              @cf.definition(true)[:default_validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
             end
           end
         end
@@ -66,30 +76,29 @@ module Eurydice
         context 'creating a column family with a specific validation class for a column' do
           marshal_types.each do |desc, type|
             it "with #{desc}" do
-              cf = @keyspace.column_family('test_family', :create => false)
-              cf.create!(:column_metadata => {'xyz' => {:validation_class => type}})
-              cf.definition(true)[:column_metadata]['xyz'][:validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
+              @cf = @keyspace.column_family(@cf_name, :create => false)
+              @cf.create!(:column_metadata => {'xyz' => {:validation_class => type}})
+              @cf.definition(true)[:column_metadata]['xyz'][:validation_class].should == 'org.apache.cassandra.db.marshal.UTF8Type'
             end
           end
         end
     
         it 'creates a column family with an index' do
-          cf = @keyspace.column_family('test_family', :create => false)
-          cf.create!(:column_metadata => {'xyz' => {:index_name => 'abc', :index_type => :keys, :validation_class => :ascii}})
-          cf.definition(true)[:column_metadata]['xyz'][:index_name].should == 'abc'
+          @cf = @keyspace.column_family(@cf_name, :create => false)
+          @cf.create!(:column_metadata => {'xyz' => {:index_name => 'abc', :index_type => :keys, :validation_class => :ascii}})
+          @cf.definition(true)[:column_metadata]['xyz'][:index_name].should == 'abc'
         end
     
         it 'creates a column family with a specific column type' do
-          cf = @keyspace.column_family('test_family', :create => false)
-          cf.create!(:column_type => :super)
-          cf.definition(true)[:column_type].should == :super
+          @cf = @keyspace.column_family(@cf_name, :create => false)
+          @cf.create!(:column_type => :super)
+          @cf.definition(true)[:column_type].should == :super
         end
       end
   
       describe '#drop!' do
         it 'drops the column family' do
           cf = @keyspace.column_family('test_family')
-          sleep(1) # dropping soon after creating confuses Cassandra
           cf.drop!
           cf.exists?.should_not be_true
         end
@@ -97,7 +106,13 @@ module Eurydice
   
       describe '#truncate!' do
         before do
-          @cf = @keyspace.column_family('test_family')
+          @cf = @keyspace.column_family('test_family', :create => false)
+          @cf.drop! rescue nil
+          @cf.create!
+        end
+        
+        after do
+          @cf.drop!
         end
     
         it 'removes all rows' do
@@ -113,7 +128,13 @@ module Eurydice
   
       describe '#definition' do
         before do
-          @cf = @keyspace.column_family('test_family')
+          @cf = @keyspace.column_family('test_family', :create => false)
+          @cf.drop! rescue nil
+          @cf.create!
+        end
+        
+        after do
+          @cf.drop!
         end
     
         it 'returns column family metadata' do
@@ -125,8 +146,13 @@ module Eurydice
   
       describe '#key?' do
         before do
-          @cf = @keyspace.column_family('test_family')
-          @cf.truncate!
+          @cf = @keyspace.column_family('test_family', :create => false)
+          @cf.drop! rescue nil
+          @cf.create!
+        end
+        
+        after do
+          @cf.drop!
         end
     
         it 'returns true if a row with the specified key exists' do
@@ -155,7 +181,7 @@ module Eurydice
           @cf = @keyspace.column_family('test_family')
           @cf.truncate!
         end
-    
+            
         describe '#update/#insert' do
           it 'writes a column' do
             @cf.insert('ABC', 'xyz' => 'abc')
@@ -185,28 +211,98 @@ module Eurydice
         end
   
         describe '#get' do
-          it 'loads a row' do
-            @cf.insert('ABC', 'xyz' => 'abc')
-            @cf.get('ABC').should == {'xyz' => 'abc'}
-          end
+          context 'with a single row key' do
+            it 'loads a row' do
+              @cf.insert('ABC', 'xyz' => 'abc')
+              @cf.get('ABC').should == {'xyz' => 'abc'}
+            end
     
-          it 'loads all columns for a row' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
-            @cf.get('ABC').should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
-          end
+            it 'loads all columns for a row by default' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+              @cf.get('ABC').should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
+            end
+            
+            it 'loads the specified columns' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+              @cf.get('ABC', :columns => %w(hello foo)).should == {'hello' => 'world', 'foo' => 'bar'}
+            end
+            
+            it 'loads the specified range of columns' do
+              @cf.insert('ABC', 'a' => 'A', 'd' => 'D', 'f' => 'F', 'g' => 'G', 'b' => 'B', 'x' => 'X')
+              @cf.get('ABC', :columns => 'b'...'f').should == {'b' => 'B', 'd' => 'D', 'f' => 'F'}
+            end
     
-          it 'loads with a custom consistency level' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
-            @cf.get('ABC', :consistency_level => :quorum).should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
+            it 'returns nil if no row was found' do
+              @cf.get('XYZ').should be_nil
+            end
           end
+          
+          context 'with multiple row keys' do
+            it 'loads multiple rows' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
+              @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+              @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+              @cf.get(%w(ABC GHI)).should == {
+                'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
+                'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
+              }
+            end
 
-          it 'loads with a custom consistency level (:cl is an alias for :consistency_level)' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
-            @cf.get('ABC', :cl => :one).should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
+            it 'does not include rows that do not exist in the result' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
+              @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+              @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+              @cf.get(%w(ABC GHI XYZ)).should == {
+                'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
+                'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
+              }
+            end
+            
+            it 'loads columns for multiple rows' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
+              @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+              @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+              @cf.get(%w(ABC GHI), :columns => %w(xyz foo)).should == {'ABC' => {'xyz' => 'abc', 'foo' => 'bar'}, 'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}}
+            end
+
+            it 'does not include rows that do not have the specified column' do
+              @cf.insert('ABC', 'foo' => 'bar')
+              @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+              @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof', 'abc' => '123')
+              @cf.get(%w(ABC GHI), :columns => %w(xyz abc)).should == {'GHI' => {'xyz' => 'ghi', 'abc' => '123'}}
+            end
+
+            it 'does not include rows that do not exist in the results' do
+              @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
+              @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
+              @cf.get(%w(ABC GHI), :columns => %w(xyz foo)).should == {'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}}
+            end
+            
+            it 'loads all columns in a range from multiple rows' do
+              @cf.insert('ABC', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D')
+              @cf.insert('DEF', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D', 'f' => 'F')
+              @cf.insert('GHI', 'a' => 'A', 'b' => 'B', 'd' => 'D')
+              @cf.get(%w(ABC GHI), :columns => 'b'...'d').should == {
+                'ABC' => {'b' => 'B', 'c' => 'C', 'd' => 'D'},
+                'GHI' => {'b' => 'B', 'd' => 'D'}
+              }
+            end
+            
+            it 'returns an empty hash if no rows exist' do
+              @cf.get(%w(ABC GHI)).should == {}
+            end
           end
-    
-          it 'returns nil if no row was found' do
-            @cf.get('XYZ').should be_nil
+          
+          context 'with options' do
+            it 'loads with a custom consistency level' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+              @cf.get('ABC', :consistency_level => :quorum).should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
+            end
+
+            it 'loads with a custom consistency level (:cl is an alias for :consistency_level)' do
+              @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
+              @cf.get('ABC', :cl => :one).should == {'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar'}
+            end
           end
         end
   
@@ -236,88 +332,6 @@ module Eurydice
           end
         end
   
-        describe '#get_column_multi' do
-          it 'loads a column for multiple rows' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_column_multi(%w(ABC GHI), 'xyz').should == {'ABC' => {'xyz' => 'abc'}, 'GHI' => {'xyz' => 'ghi'}}
-          end
-    
-          it 'does not include rows that do not have the specified column' do
-            @cf.insert('ABC', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_column_multi(%w(ABC GHI), 'xyz').should == {'GHI' => {'xyz' => 'ghi'}}
-          end
-
-          it 'does not include rows that do not exist in the results' do
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_column_multi(%w(ABC GHI), 'xyz').should == {'GHI' => {'xyz' => 'ghi'}}
-          end
-    
-          it 'loads with a custom consistency level' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_column_multi(%w(ABC GHI), 'xyz', :consistency_level => :quorum).should == {'ABC' => {'xyz' => 'abc'}, 'GHI' => {'xyz' => 'ghi'}}
-          end
-
-          it 'loads with a custom consistency level (:cl is an alias for :consistency_level)' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_column_multi(%w(ABC GHI), 'xyz', :cl => :quorum).should == {'ABC' => {'xyz' => 'abc'}, 'GHI' => {'xyz' => 'ghi'}}
-          end
-    
-          it 'returns an empty hash if no rows exist' do
-            @cf.get_column_multi(%w(ABC GHI), 'xyz').should == {}
-          end
-        end
-        
-        describe '#get_multi' do
-          it 'loads multiple rows' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_multi(%w(ABC GHI)).should == {
-              'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
-              'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
-            }
-          end
-
-          it 'does not include rows that do not exist in the result' do
-            @cf.insert('ABC', 'xyz' => 'abc', 'foo' => 'bar')
-            @cf.insert('DEF', 'xyz' => 'def', 'hello' => 'world')
-            @cf.insert('GHI', 'xyz' => 'ghi', 'foo' => 'oof')
-            @cf.get_multi(%w(ABC GHI XYZ)).should == {
-              'ABC' => {'xyz' => 'abc', 'foo' => 'bar'},
-              'GHI' => {'xyz' => 'ghi', 'foo' => 'oof'}
-            }
-          end
-
-          it 'returns an empty hash if no rows exist' do
-            @cf.get_multi(%w(ABC GHI XYZ)).should == {}
-          end
-        end
-
-        describe '#get_column_range' do
-          it 'loads all columns in a range' do
-            @cf.insert('ABC', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D')
-            @cf.get_column_range('ABC', 'b', 'c').should == {'b' => 'B', 'c' => 'C'}
-          end
-          
-          it 'returns nil if no row was found' do
-            @cf.get_column_range('ABC', 'b', 'c').should be_nil
-          end
-
-          it 'returns nil if no columns were found' do
-            @cf.insert('ABC', 'a' => 'A', 'b' => 'B', 'c' => 'C', 'd' => 'D')
-            @cf.get_column_range('ABC', 'x', 'z').should be_nil
-          end
-        end
-
         describe '#delete' do
           it 'removes a row' do
             @cf.insert('ABC', 'xyz' => 'abc')
