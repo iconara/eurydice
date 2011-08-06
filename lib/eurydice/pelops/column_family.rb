@@ -125,13 +125,15 @@ module Eurydice
       end
       
       def create_column_predicate(options)
+        max_column_count = options.fetch(:max_column_count, java.lang.Integer::MAX_VALUE)
+        reversed = options.fetch(:reversed, false)
         case options[:columns]
         when Range
-          ::Pelops::Selector.new_columns_predicate(to_pelops_bytes(options[:columns].begin), to_pelops_bytes(options[:columns].end), false, java.lang.Integer::MAX_VALUE)
+          ::Pelops::Selector.new_columns_predicate(to_pelops_bytes(options[:columns].begin), to_pelops_bytes(options[:columns].end), reversed, max_column_count)
         when Array
           ::Pelops::Selector.new_columns_predicate(*options[:columns].map { |col| to_pelops_bytes(col) })
         else
-          ::Pelops::Selector.new_columns_predicate_all(false, java.lang.Integer::MAX_VALUE)
+          ::Pelops::Selector.new_columns_predicate_all(reversed, max_column_count)
         end
       end
     

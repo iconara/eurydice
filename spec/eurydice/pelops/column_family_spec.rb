@@ -231,6 +231,16 @@ module Eurydice
               @cf.insert('ABC', 'a' => 'A', 'd' => 'D', 'f' => 'F', 'g' => 'G', 'b' => 'B', 'x' => 'X')
               @cf.get('ABC', :columns => 'b'...'f').should == {'b' => 'B', 'd' => 'D', 'f' => 'F'}
             end
+            
+            it 'loads a max number of columns' do
+              @cf.insert('ABC', Hash[('a'..'z').map { |a| [a, a.upcase] }.shuffle])
+              @cf.get('ABC', :max_column_count => 10).should == Hash[('a'..'z').take(10).map { |a| [a, a.upcase] }]
+            end
+            
+            it 'loads columns in reverse order with :reversed => true' do
+              @cf.insert('ABC', Hash[('a'..'f').map { |a| [a, a.upcase] }.shuffle])
+              @cf.get('ABC', :reversed => true).keys.should == ('a'..'f').to_a.reverse
+            end
     
             it 'returns nil if no row was found' do
               @cf.get('XYZ').should be_nil
