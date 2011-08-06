@@ -211,6 +211,13 @@ module Eurydice
             @cf.get('ABC').should == {'xyz' => 'abc'}
           end
           
+          it 'writes a column with a TTL' do
+            # TODO: not sure how to test without actually waiting for the TTL to expire
+            @cf.insert('ABC', {'xyz' => 'abc'}, {:ttl => 1})
+            sleep(1.5)
+            @cf.get('ABC').should be_nil
+          end
+          
           context 'with explicit column data types' do
             it 'writes integer columns keys as longs' do
               @cf.insert('ABC', {42 => 'foo'}, :comparator => :long)

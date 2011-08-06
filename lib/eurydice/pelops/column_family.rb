@@ -68,7 +68,10 @@ module Eurydice
           key_type = options[:comparator]
           mutator = @keyspace.create_mutator
           columns = properties.map do |k, v|
-            mutator.new_column(to_pelops_bytes(k, key_type), to_pelops_bytes(v, types[k]))
+            key = to_pelops_bytes(k, key_type)
+            value = to_pelops_bytes(v, types[k])
+            ttl = options.fetch(:ttl, mutator.class::NO_TTL)
+            mutator.new_column(key, value, ttl)
           end
           mutator.write_columns(@name, row_key, columns)
           mutator.execute(get_cl(options))
