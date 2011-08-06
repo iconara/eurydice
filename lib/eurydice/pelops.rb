@@ -11,6 +11,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.Bytes'
   import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
   import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
+  import 'org.scale7.cassandra.pelops.exceptions.ApplicationException'
 end
 
 module Eurydice
@@ -38,6 +39,10 @@ module Eurydice
 
     module ByteHelpers
       extend self
+      
+      def empty_pelops_bytes
+        ::Pelops::Bytes::EMPTY
+      end
       
       def to_pelops_bytes(str)
         ::Pelops::Bytes.new(str.to_s.to_java_bytes)
@@ -81,6 +86,8 @@ module Eurydice
             raise error_class, message, backtrace
           when ::Pelops::NotFoundException
             raise NotFoundError, e.cause.message, e.backtrace
+          when ::Pelops::ApplicationException
+            raise EurydiceError, e.cause.message, e.backtrace
           when Thrift::TTransportException
             raise TimeoutError, e.cause.message, e.backtrace
           end

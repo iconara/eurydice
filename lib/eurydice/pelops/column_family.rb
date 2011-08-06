@@ -125,6 +125,20 @@ module Eurydice
         end
       end
       
+      def get_indexed(column_name, operator, value, options={})
+        thrift_exception_handler do
+          selector = @keyspace.create_selector
+          op = Cassandra::INDEX_OPERATORS[operator]
+          max_rows = options.fetch(:max_row_count, 20)
+          raise ArgumentError, %(Unsupported index operator: "#{operator}") unless op
+          index_expression = selector.class.new_index_expression(to_pelops_bytes(column_name), op, to_pelops_bytes(value))
+          index_clause = selector.class.new_index_clause(empty_pelops_bytes, max_rows, index_expression)
+          column_predicate = create_column_predicate(options)
+          rows = selector.get_indexed_columns(@name, index_clause, column_predicate, get_cl(options))
+          rows_to_h(rows)
+        end
+      end
+      
     private
     
       def get_single(row_key, options={})

@@ -405,6 +405,49 @@ module Eurydice
           end
         end
 
+        describe '#get_indexed' do
+          before do
+            @cf = @keyspace.column_family('indexed_test_family', :create => false)
+            @cf.drop! rescue nil
+            @cf.create!(:column_metadata => {
+              'name' => {
+                :validation_class => :ascii,
+                :index_name => 'name_index',
+                :index_type => :keys
+              },
+              'age' => {
+                :validation_class => :bytes,
+                :index_name => 'age_index',
+                :index_type => :keys
+              }
+            })
+          end
+          
+          it 'loads rows by index' do
+            @cf.insert('user1', {'name' => 'sue', 'age' => '33'})
+            @cf.insert('user2', {'name' => 'phil', 'age' => '29'})
+            @cf.get_indexed('name', :==, 'sue').should == {'user1' => {'name' => 'sue', 'age' => '33'}}
+          end
+          
+          it 'loads rows by index (using :eq instead of :==)' do
+            @cf.insert('user1', {'name' => 'sue', 'age' => '33'})
+            @cf.insert('user2', {'name' => 'phil', 'age' => '29'})
+            @cf.get_indexed('name', :eq, 'sue').should == {'user1' => {'name' => 'sue', 'age' => '33'}}
+          end
+          
+          it 'limits the number of returned rows' do
+            names = %w(sue phil sam jim)
+            100.times do |i|
+              @cf.insert("user:#{i.to_s.rjust(2, '0')}", {'name' => names[i % names.size]})
+            end
+            @cf.get_indexed('name', :==, 'sam', :max_row_count => 2).should have(2).items
+          end
+          
+          it 'raises an error if the index operator is not supported' do
+            expect { @cf.get_indexed('name', :%, 'me') }.to raise_error(ArgumentError)
+          end
+        end
+
         describe '#delete' do
           it 'removes a row' do
             @cf.insert('ABC', 'xyz' => 'abc')

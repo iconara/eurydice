@@ -14,6 +14,7 @@ module Cassandra
   import 'org.apache.cassandra.thrift.InvalidRequestException'
   import 'org.apache.cassandra.thrift.SlicePredicate'
   import 'org.apache.cassandra.thrift.SliceRange'
+  import 'org.apache.cassandra.thrift.IndexOperator'
   
   CONSISTENCY_LEVELS = {
     :one    => Cassandra::ConsistencyLevel::ONE,
@@ -29,6 +30,19 @@ module Cassandra
     :long         => 'org.apache.cassandra.db.marshal.LongType'.freeze,
     :lexical_uuid => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
     :time_uuid    => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze
+  }.freeze
+  
+  INDEX_OPERATORS = {
+    :==  => IndexOperator::EQ,
+    :eq  => IndexOperator::EQ,
+    :>   => IndexOperator::GT,
+    :gt  => IndexOperator::GT,
+    :>=  => IndexOperator::GTE,
+    :gte => IndexOperator::GTE,
+    :<   => IndexOperator::LT,
+    :lt  => IndexOperator::LT,
+    :<=  => IndexOperator::LTE,
+    :lte => IndexOperator::LTE
   }.freeze
   
   class KsDef
@@ -59,7 +73,7 @@ module Cassandra
           cf_hs = field_value.map { |cf_def| cf_def.to_h }
           acc[:column_families] = Hash[cf_hs.map { |cf_h| [cf_h[:name], cf_h] }]
         when :strategy_options
-          acc[field_name] = Hash[field_value.map { |pair| [pair.first.to_sym, pair.last] }] # JRuby 1.6.1 Java Map doesn't splat when yielding
+          acc[field_name] = Hash[field_value.map { |pair| [pair.first.to_sym, pair.last] }] # JRuby 1.6.2 Java Map doesn't splat when yielding
         else
           acc[field_name] = field_value
         end
