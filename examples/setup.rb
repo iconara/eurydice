@@ -4,11 +4,9 @@ require 'eurydice'
 
 
 begin
-  keyspace = Eurydice.connect('blurgh')
-  keyspace.create!
-
+  cluster = Eurydice.connect
+  keyspace = cluster.keyspace('blurgh')
   cf = keyspace.column_family('foo')
-  cf.create!
 ensure
   keyspace.drop!
 end
