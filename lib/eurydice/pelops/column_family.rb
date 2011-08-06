@@ -95,17 +95,15 @@ module Eurydice
       end
       alias_method :row_exists?, :key?
     
-      def get(row_key, options={})
-        thrift_exception_handler do
-          selector = @keyspace.create_selector
-          columns = selector.get_columns_from_row(@name, row_key, false, get_cl(options))
-          if columns.empty?
-          then nil
-          else columns_to_h(columns)
-          end
+      def get(row_or_rows, options={})
+        case row_or_rows
+        when Array then get_multi(row_or_rows, options)
+        else get_single(row_or_rows, options)
         end
       end
-    
+      alias_method :get_row, :get
+      alias_method :get_rows, :get
+      
       def get_column(row_key, column_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
@@ -115,62 +113,63 @@ module Eurydice
       rescue NotFoundError => e
         nil
       end
+      
+    private
     
-      def get_column_multi(row_keys, column_key, options={})
+      def get_single(row_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
-          column_predicate = Cassandra::SlicePredicate.new
-          column_predicate.addToColumn_names(to_nio_bytes(column_key))
-          byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
-          result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
-          result.reduce({}) do |acc, (row_key, columns)|
-            columns_h = columns_to_h(columns)
-            acc[pelops_bytes_to_s(row_key)] = columns_h unless columns_h.empty?
-            acc
-          end
+          column_predicate = create_column_predicate(options)
+          columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+          columns_to_h(columns)
         end
       end
-      
+    
       def get_multi(row_keys, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
-          column_predicate = Cassandra::SlicePredicate.new
-          column_predicate.slice_range = Cassandra::SliceRange.new
-          column_predicate.slice_range.set_start(to_byte_array(''))
-          column_predicate.slice_range.set_finish(to_byte_array(''))
+          column_predicate = create_column_predicate(options)
           byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
-          result = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
-          result.reduce({}) do |acc, (row_key, columns)|
-            columns_h = columns_to_h(columns)
-            acc[pelops_bytes_to_s(row_key)] = columns_h unless columns_h.empty?
-            acc
-          end
+          rows = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+          rows_to_h(rows)
         end
       end
       
-      def get_column_range(row_key, start_column_key, end_column_key, options={})
-        thrift_exception_handler do
-          selector = @keyspace.create_selector
-          column_predicate = Cassandra::SlicePredicate.new
-          column_predicate.slice_range = Cassandra::SliceRange.new
-          column_predicate.slice_range.set_start(to_byte_array(start_column_key))
-          column_predicate.slice_range.set_finish(to_byte_array(end_column_key))
-          columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
-          if columns.empty?
-          then nil
-          else columns_to_h(columns)
+      def create_column_predicate(options)
+        Cassandra::SlicePredicate.new.tap do |column_predicate|
+          case options[:columns]
+          when Range
+            column_predicate.slice_range = Cassandra::SliceRange.new
+            column_predicate.slice_range.set_start(to_byte_array(options[:columns].begin))
+            column_predicate.slice_range.set_finish(to_byte_array(options[:columns].end))
+          when Array
+            column_predicate.column_names = options[:columns].map { |column_key| to_nio_bytes(column_key) }
+          else
+            column_predicate.slice_range = Cassandra::SliceRange.new
+            column_predicate.slice_range.set_start(to_byte_array(''))
+            column_predicate.slice_range.set_finish(to_byte_array(''))
           end
         end
       end
     
-    private
+      def rows_to_h(rows)
+        rows.reduce({}) do |acc, (row_key, columns)|
+          columns_h = columns_to_h(columns)
+          acc[pelops_bytes_to_s(row_key)] = columns_h if columns_h && !columns_h.empty?
+          acc
+        end
+      end
   
       def columns_to_h(columns)
-        columns.reduce({}) do |acc, column|
-          key   = byte_array_to_s(column.get_name)
-          value = byte_array_to_s(column.get_value)
-          acc[key] = value
-          acc
+        if columns.empty?
+          nil
+        else
+          columns.reduce({}) do |acc, column|
+            key   = byte_array_to_s(column.get_name)
+            value = byte_array_to_s(column.get_value)
+            acc[key] = value
+            acc
+          end
         end
       end
   
