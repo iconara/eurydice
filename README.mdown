@@ -1,0 +1,25 @@
+# Eurydice
+
+Eurydice is a Cassandra client library for JRuby built on top of [Pelops](https://github.com/s7/scale7-pelops).
+
+See the `examples` directory for usage.
+
+## Installation & requirements
+
+Tested with JRuby 1.6.2 in 1.9 mode and Cassandra 0.8.1.
+
+    gem install eurydice
+    
+This will also install two dependencies: `pelops-jars` and `cassandra-jars` which contain the Pelops and Cassandra JAR files.
+
+## Contributors
+
+Theo Hultberg, [@iconara](http://twitter.com/iconara)
+
+## License
+
+Eurydice is licensed under the [MIT License](http://www.opensource.org/licenses/mit-license.php), the same as Pelops.
+
+## Eurydice?
+
+Eurydice was the daughter of Pelops (but she's not _that_ [Eurydice](http://en.wikipedia.org/wiki/Eurydice)).
