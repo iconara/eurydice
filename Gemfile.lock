@@ -4,24 +4,16 @@ PATH
     eurydice (1.0.0-java)
       pelops-jars (= 1.2)
 
-PATH
-  remote: ext/cassandra-jars
-  specs:
-    cassandra-jars (0.8.0-java)
-
-PATH
-  remote: ext/pelops-jars
-  specs:
-    pelops-jars (1.2-java)
-      cassandra-jars (~> 0.8.0)
-
 GEM
   remote: http://rubygems.org/
   specs:
     bouncy-castle-java (1.5.0146.1)
+    cassandra-jars (0.8.0-java)
     diff-lcs (1.1.2)
     jruby-openssl (0.7.4)
       bouncy-castle-java
+    pelops-jars (1.2-java)
+      cassandra-jars (~> 0.8.0)
     rake (0.9.2)
     rspec (2.6.0)
       rspec-core (~> 2.6.0)
@@ -36,9 +28,7 @@ PLATFORMS
   java
 
 DEPENDENCIES
-  cassandra-jars!
   eurydice!
   jruby-openssl
-  pelops-jars!
   rake
   rspec
