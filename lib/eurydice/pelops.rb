@@ -20,6 +20,10 @@ module Eurydice
     Pelops.connect
   end
   
+  def self.disconnect!
+    Pelops.disconnect!
+  end
+  
   module Pelops
     def self.connect(options={})
       host = options.fetch(:host, 'localhost')

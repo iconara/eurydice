@@ -2,7 +2,7 @@
 
 Eurydice is a Cassandra client library for JRuby built on top of [Pelops](https://github.com/s7/scale7-pelops).
 
-See the `examples` directory for usage.
+See the `examples` directory and the specs for usage.
 
 ## Installation & requirements
 

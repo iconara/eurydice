@@ -27,6 +27,10 @@ module Eurydice
       def keyspaces
         keyspace_manager.keyspace_names.map { |ks_def| ks_def.name }
       end
+      
+      def nodes
+        @cluster.nodes.map { |n| n.address }
+      end
     
     private
   
