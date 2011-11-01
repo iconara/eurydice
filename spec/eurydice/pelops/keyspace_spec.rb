@@ -26,14 +26,14 @@ module Eurydice
         it 'creates a keyspace with specific strategy options' do
           @keyspace = @cluster.keyspace(@keyspace_name, :create => false)
           @keyspace.create!(:strategy_options => {:replication_factor => 2})
-          @keyspace.definition(true)[:strategy_options][:replication_factor].should == '2'
+          @keyspace.definition(true)[:strategy_options][:replication_factor].should == 2
         end
         
         it 'creates a whole schema' do
           @keyspace = @cluster.keyspace(@keyspace_name, :create => false)
           @keyspace.create!(
             :strategy_class => 'org.apache.cassandra.locator.NetworkTopologyStrategy',
-            :strategy_options => {:replication_factor => 2},
+            :strategy_options => {:dc1 => 1, :dc2 => 2},
             :column_families => {
               'some_family' => {
                 :comparator_type => :ascii,
@@ -57,7 +57,7 @@ module Eurydice
           )
           definition = @keyspace.definition(true)
           definition[:strategy_class].should == 'org.apache.cassandra.locator.NetworkTopologyStrategy'
-          definition[:strategy_options].should == {:replication_factor => '2'}
+          definition[:strategy_options].should == {:dc1 => 1, :dc2 => 2}
           definition[:column_families]['some_family'][:comparator_type].should == 'org.apache.cassandra.db.marshal.AsciiType'
           definition[:column_families]['some_family'][:comment].should == 'This is some family'
           definition[:column_families]['another_family'][:comment].should == 'This is another family'

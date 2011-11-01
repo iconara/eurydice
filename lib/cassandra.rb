@@ -45,6 +45,11 @@ module Cassandra
     :lte => IndexOperator::LTE
   }.freeze
   
+  LOCATOR_STRATEGY_CLASSES = {
+    :simple           => 'org.apache.cassandra.locator.SimpleStrategy'.freeze,
+    :network_topology => 'org.apache.cassandra.locator.NetworkTopologyStrategy'.freeze
+  }.freeze
+  
   class KsDef
     def self.from_h(h)
       ks_def = h.reduce(self.new) do |ks_def, (field_name, field_value)|
@@ -78,6 +83,12 @@ module Cassandra
           acc[field_name] = field_value
         end
         acc
+      end.tap do |h|
+        if h[:strategy_class] == LOCATOR_STRATEGY_CLASSES[:simple] || h[:strategy_class] == LOCATOR_STRATEGY_CLASSES[:network_topology]
+          h[:strategy_options].keys.each do |k|
+            h[:strategy_options][k] = h[:strategy_options][k].to_i
+          end
+        end
       end
     end
   end
