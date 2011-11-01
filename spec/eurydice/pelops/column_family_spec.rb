@@ -381,7 +381,8 @@ module Eurydice
           it 'returns an Enumerator that yields each column in a row' do
             row = {}
             enum = @cf.each_column('ABC')
-            enum.each do |k, v|
+            enum.each do |pair|
+              k, v = *pair # JRuby 1.6.4 Enumerator#each does not splat the arguments
               row[k] = v
             end
             row.should == Hash[('a'..'z').map { |a| [a, a.upcase] }]
