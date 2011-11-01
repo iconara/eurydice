@@ -28,7 +28,10 @@ module Eurydice
     
       def create!(options={})
         thrift_exception_handler do
-          ks_def = Cassandra::KsDef.from_h({:strategy_class => 'org.apache.cassandra.locator.LocalStrategy'}.merge(options).merge(:name => @name))
+          ks_properties = options.merge(:name => @name)
+          ks_properties[:strategy_class] = DEFAULT_STRATEGY_CLASS unless ks_properties.key?(:strategy_class)
+          ks_properties[:strategy_options] = DEFAULT_STRATEGY_OPTIONS if !ks_properties.key?(:strategy_options) && ks_properties[:strategy_class] == DEFAULT_STRATEGY_CLASS
+          ks_def = Cassandra::KsDef.from_h(ks_properties)
           keyspace_manager.add_keyspace(ks_def)
           @driver.add_pool(@pool_name, @cluster, @name)
         end
@@ -70,6 +73,11 @@ module Eurydice
       def column_family_manger
         @column_family_manger ||= @driver.create_column_family_manager(@cluster, @name)
       end
+      
+    private
+    
+      DEFAULT_STRATEGY_CLASS = Cassandra::LOCATOR_STRATEGY_CLASSES[:simple]
+      DEFAULT_STRATEGY_OPTIONS = {:replication_factor => 1}.freeze
     end
   end
 end

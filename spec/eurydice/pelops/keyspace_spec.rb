@@ -82,7 +82,8 @@ module Eurydice
           @keyspace = @cluster.keyspace(@keyspace_name)
           definition = @keyspace.definition
           definition[:name].should == @keyspace_name
-          definition[:strategy_class].should == 'org.apache.cassandra.locator.LocalStrategy'
+          definition[:strategy_class].should == 'org.apache.cassandra.locator.SimpleStrategy'
+          definition[:strategy_options].should == {:replication_factor => 1}
         end
       end
     end
