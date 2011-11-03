@@ -6,6 +6,7 @@ require_relative 'common'
 cluster = Eurydice.connect
 keyspace = cluster.keyspace('my_keyspace')
 column_family = keyspace.column_family('employees', :create => false)
+column_family.drop! if column_family.exists?
 column_family.create!(:column_metadata => {'name' => {:validation_class => :utf8, :index_name => 'name_index', :index_type => :keys}})
 column_family.insert('employee:1', {'name' => 'Sam', 'role' => 'Developer'})
 column_family.insert('employee:2', {'name' => 'Phil', 'role' => 'Accountant'})
@@ -37,6 +38,18 @@ employees = column_family.get(%w(employee:2 employee:3 employee:4), :columns => 
 employees.each do |row_key, employee|
   puts "#{row_key} => #{employee['name']}"
 end
+
+puts '---'
+
+column_family.insert('letters', ('a'..'z').to_a.zip(('A'..'Z').to_a))
+
+# Load a page of columns
+result = column_family.get('letters', :max_column_count => 10)
+puts result.keys.join(', ')
+# For the next page you need to tell Eurydice which the last key you saw was
+result = column_family.get('letters', :from_column => result.keys.last, :max_column_count => 11)
+# The last key is included in the next page (so we load one extra column, and shift off the first column)
+puts result.keys[1..-1].join(', ')
 
 puts '---'
 

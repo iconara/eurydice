@@ -148,6 +148,8 @@ module Eurydice
       
     private
     
+      EMPTY_STRING = ''.freeze
+    
       def get_single(row_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
@@ -170,6 +172,10 @@ module Eurydice
       def create_column_predicate(options)
         max_column_count = options.fetch(:max_column_count, java.lang.Integer::MAX_VALUE)
         reversed = options.fetch(:reversed, false)
+        if options.key?(:from_column)
+          raise ArgumentError, %(You can set either :columns or :from_column, but not both) if options.key?(:columns)
+          options[:columns] = options[:from_column]..EMPTY_STRING
+        end
         case options[:columns]
         when Range
           ::Pelops::Selector.new_columns_predicate(to_pelops_bytes(options[:columns].begin), to_pelops_bytes(options[:columns].end), reversed, max_column_count)

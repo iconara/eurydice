@@ -258,6 +258,15 @@ module Eurydice
               @cf.get('ABC', :max_column_count => 10).should == Hash[('a'..'z').take(10).map { |a| [a, a.upcase] }]
             end
             
+            it 'loads a page of columns' do
+              @cf.insert('ABC', Hash[('a'..'z').map { |a| [a, a.upcase] }.shuffle])
+              @cf.get('ABC', :from_column => 'm', :max_column_count => 10).should == Hash[('m'..'z').take(10).map { |a| [a, a.upcase] }]
+            end
+            
+            it 'raises an error if both :columns and :from_column are given' do
+              expect { @cf.get('ABC', :columns => 'a'..'z', :from_column => 'm') }.to raise_error(ArgumentError)
+            end
+            
             it 'loads columns in reverse order with :reversed => true' do
               @cf.insert('ABC', Hash[('a'..'f').map { |a| [a, a.upcase] }.shuffle])
               @cf.get('ABC', :reversed => true).keys.should == ('a'..'f').to_a.reverse
