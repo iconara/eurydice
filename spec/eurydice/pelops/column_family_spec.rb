@@ -181,6 +181,12 @@ module Eurydice
           @cf = @keyspace.column_family('test_family')
           @cf.truncate!
         end
+        
+        before do
+          @counter_cf = @keyspace.column_family('counter_family', :create => false)
+          @counter_cf.create!(:default_validation_class => :counter) unless @counter_cf.exists?
+          @counter_cf.truncate!
+        end
             
         describe '#update/#insert' do
           it 'writes a column' do
@@ -230,6 +236,26 @@ module Eurydice
             end
           end
         end
+
+        describe '#increment' do
+          it 'can increment a counter column' do
+            @cf.increment('ABC', 'count')
+            @cf.get_column('ABC', 'count').should == 1
+          end
+
+          it 'can increment a counter column by the specified amount' do
+            @cf.increment('ABC', 'count', 3)
+            @cf.increment('ABC', 'count', 2)
+            @cf.get_column('ABC', 'count').should == 5
+          end
+          
+          [:inc, :incr, :increment_column].each do |name|
+            it "is aliased as #{name}" do
+              @cf.send(name, 'ABC', 'count')
+              @cf.get_column('ABC', 'count').should == 1
+            end
+          end
+        end
   
         describe '#get' do
           context 'with a single row key' do
@@ -274,6 +300,14 @@ module Eurydice
     
             it 'returns nil if no row was found' do
               @cf.get('XYZ').should be_nil
+            end
+            
+            it 'loads the value of counter columns' do
+              @counter_cf.increment('ABC', 'a', 1)
+              @counter_cf.increment('ABC', 'b', 2)
+              @counter_cf.increment('ABC', 'c', 4)
+              @counter_cf.increment('ABC', 'd', 8)
+              @counter_cf.get('ABC', :columns => %w(a b c d)).should == {'a' => 1, 'b' => 2, 'c' => 4, 'd' => 8}
             end
           end
           
@@ -331,6 +365,17 @@ module Eurydice
             it 'returns an empty hash if no rows exist' do
               @cf.get(%w(ABC GHI)).should == {}
             end
+            
+            it 'loads the value of counter columns' do
+              @counter_cf.increment('ABC', 'a', 1)
+              @counter_cf.increment('ABC', 'b', 2)
+              @counter_cf.increment('DEF', 'c', 4)
+              @counter_cf.increment('DEF', 'd', 8)
+              @counter_cf.get(%w(ABC DEF), :columns => %w(a b c d)).should == {
+                'ABC' => {'a' => 1, 'b' => 2}, 
+                'DEF' => {'c' => 4, 'd' => 8}
+              }
+            end
           end
           
           context 'with options' do
@@ -371,6 +416,11 @@ module Eurydice
           it 'returns nil if no column was found' do
             @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
             @cf.get_column('XYZ', 'abc').should be_nil
+          end
+          
+          it 'returns the value of a counter column' do
+            @counter_cf.increment('ABC', 'x', 8)
+            @counter_cf.get_column('ABC', 'x').should == 8
           end
         end
 
