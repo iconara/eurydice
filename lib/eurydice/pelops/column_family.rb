@@ -130,6 +130,14 @@ module Eurydice
         end
       end
       
+      def get_column_count(row_key, options={})
+        thrift_exception_handler do
+          selector = @keyspace.create_selector
+          column_predicate = create_column_predicate(options)
+          selector.get_column_count(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+        end
+      end
+      
       def get_indexed(column_key, operator, value, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
