@@ -2,5 +2,5 @@
 
 
 module Eurydice
-  VERSION = '1.0.3'
+  VERSION = '1.1.0.b1'
 end
