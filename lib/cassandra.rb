@@ -24,12 +24,14 @@ module Cassandra
   }.freeze
 
   MARSHAL_TYPES = {
-    :bytes        => 'org.apache.cassandra.db.marshal.BytesType'.freeze,
-    :ascii        => 'org.apache.cassandra.db.marshal.AsciiType'.freeze,
-    :utf8         => 'org.apache.cassandra.db.marshal.UTF8Type'.freeze,
-    :long         => 'org.apache.cassandra.db.marshal.LongType'.freeze,
-    :lexical_uuid => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
-    :time_uuid    => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze
+    :bytes          => 'org.apache.cassandra.db.marshal.BytesType'.freeze,
+    :ascii          => 'org.apache.cassandra.db.marshal.AsciiType'.freeze,
+    :utf8           => 'org.apache.cassandra.db.marshal.UTF8Type'.freeze,
+    :long           => 'org.apache.cassandra.db.marshal.LongType'.freeze,
+    :lexical_uuid   => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
+    :time_uuid      => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze,
+    :counter        => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze,
+    :counter_column => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze
   }.freeze
   
   INDEX_OPERATORS = {

@@ -79,6 +79,17 @@ module Eurydice
       end
       alias_method :insert, :update
     
+      def increment(row_key, column_key, amount=1, options={})
+        thrift_exception_handler do
+          mutator = @keyspace.create_mutator
+          mutator.write_counter_column(@name, to_pelops_bytes(row_key), to_pelops_bytes(column_key), amount)
+          mutator.execute(get_cl(options))
+        end
+      end
+      alias_method :inc, :increment
+      alias_method :incr, :increment
+      alias_method :increment_column, :increment
+    
       def key?(row_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
@@ -101,8 +112,13 @@ module Eurydice
       def get_column(row_key, column_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
-          column = selector.get_column_from_row(@name, row_key, column_key, get_cl(options))
-          byte_array_to_s(column.get_value)
+          if counter_columns?
+            column = selector.get_counter_column_from_row(@name, to_pelops_bytes(row_key), to_pelops_bytes(column_key), get_cl(options))
+            column.get_value
+          else
+            column =selector.get_column_from_row(@name, to_pelops_bytes(row_key), to_pelops_bytes(column_key), get_cl(options))
+            byte_array_to_s(column.get_value)
+          end
         end
       rescue NotFoundError => e
         nil
@@ -158,11 +174,19 @@ module Eurydice
     
       EMPTY_STRING = ''.freeze
     
+      def counter_columns?
+        @is_counter_cf ||= definition[:default_validation_class] == Cassandra::MARSHAL_TYPES[:counter]
+      end
+    
       def get_single(row_key, options={})
         thrift_exception_handler do
           selector = @keyspace.create_selector
           column_predicate = create_column_predicate(options)
-          columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+          if counter_columns?
+            columns = selector.get_counter_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+          else
+            columns = selector.get_columns_from_row(@name, to_pelops_bytes(row_key), column_predicate, get_cl(options))
+          end
           columns_to_h(columns, options)
         end
       end
@@ -172,7 +196,11 @@ module Eurydice
           selector = @keyspace.create_selector
           column_predicate = create_column_predicate(options)
           byte_row_keys = row_keys.map { |rk| to_pelops_bytes(rk) }
-          rows = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+          if counter_columns?
+            rows = selector.get_counter_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+          else
+            rows = selector.get_columns_from_rows(@name, byte_row_keys, column_predicate, get_cl(options))
+          end
           rows_to_h(rows, options)
         end
       end
@@ -218,7 +246,10 @@ module Eurydice
         types = options[:validations] || {}
         key_type = options[:comparator]
         key = byte_array_to_s(column.get_name, key_type)
-        value = byte_array_to_s(column.get_value, types[key])
+        value = if counter_columns? 
+          then column.get_value 
+          else byte_array_to_s(column.get_value, types[key])
+        end
         return key, value
       end
   
