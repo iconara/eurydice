@@ -16,8 +16,8 @@ module Pelops
 end
 
 module Eurydice
-  def self.connect
-    Pelops.connect
+  def self.connect(*args)
+    Pelops.connect(*args)
   end
   
   def self.disconnect!
