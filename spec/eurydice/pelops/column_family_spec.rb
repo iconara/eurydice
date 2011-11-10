@@ -426,7 +426,7 @@ module Eurydice
 
         describe '#get_column_count' do
           it 'returns the number of columns in the specified row' do
-            @cf.insert('ABC', Hash[('a'..'z').zip(0..9 * 10)])
+            @cf.insert('ABC', Hash[('a'..'z').zip(0..100)])
             @cf.get_column_count('ABC').should == 26
           end
           
@@ -435,12 +435,12 @@ module Eurydice
           end
           
           it 'returns the number of columns in the specified range' do
-            @cf.insert('ABC', Hash[('a'..'z').zip(0..9 * 10)])
+            @cf.insert('ABC', Hash[('a'..'z').zip(0..100)])
             @cf.get_column_count('ABC', :columns => 'm'..'q').should == 5
           end
 
           it 'returns the number of columns after the specified column' do
-            @cf.insert('ABC', Hash[('a'..'z').zip(0..9 * 10)])
+            @cf.insert('ABC', Hash[('a'..'z').zip(0..100)])
             @cf.get_column_count('ABC', :from_column => 's').should == 8
           end
         end
