@@ -29,7 +29,8 @@ module Eurydice
       host = options.fetch(:host, 'localhost')
       port = options.fetch(:port, 9160)
       pool_name = options.fetch(:pool_name, 'eurydice')
-      Cluster.new(::Pelops::Cluster.new(host, port))
+      dynamic_node_discovery = options.fetch(:dynamic_node_discovery, false)
+      Cluster.new(::Pelops::Cluster.new(host, port, dynamic_node_discovery))
     end
   
     def self.keyspace(keyspace_name, host='localhost', port=9160, pool_name='eurydice')
