@@ -232,20 +232,20 @@ module Eurydice
 
       describe '#increment' do
         it 'can increment a counter column' do
-          @cf.increment('ABC', 'count')
-          @cf.get_column('ABC', 'count').should == 1
+          @counter_cf.increment('ABC', 'count')
+          @counter_cf.get_column('ABC', 'count').should == 1
         end
 
         it 'can increment a counter column by the specified amount' do
-          @cf.increment('ABC', 'count', 3)
-          @cf.increment('ABC', 'count', 2)
-          @cf.get_column('ABC', 'count').should == 5
+          @counter_cf.increment('ABC', 'count', 3)
+          @counter_cf.increment('ABC', 'count', 2)
+          @counter_cf.get_column('ABC', 'count').should == 5
         end
           
         [:inc, :incr, :increment_column].each do |name|
           it "is aliased as #{name}" do
-            @cf.send(name, 'ABC', 'count')
-            @cf.get_column('ABC', 'count').should == 1
+            @counter_cf.send(name, 'ABC', 'count')
+            @counter_cf.get_column('ABC', 'count').should == 1
           end
         end
       end
