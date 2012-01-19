@@ -200,10 +200,21 @@ module Eurydice
         end
           
         it 'writes a column with a TTL' do
-          # TODO: not sure how to test without actually waiting for the TTL to expire
           @cf.insert('ABC', {'xyz' => 'abc'}, {:ttl => 1})
-          sleep(2)
-          @cf.get('ABC').should be_nil
+          tries = 5
+          begin
+            sleep(0.5)
+            @cf.get('ABC').should be_nil
+          rescue RSpec::Expectations::ExpectationNotMetError => e
+            # since we're testing timings in an external system we need to wait, but
+            # to not block the tests by waiting excessively long we wait for a short
+            # time and retry the test a few times
+            if (tries -= 1) > 0
+              retry
+            else
+              raise
+            end
+          end
         end
           
         context 'with explicit column data types' do
