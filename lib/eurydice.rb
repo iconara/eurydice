@@ -2,6 +2,7 @@
 
 require 'java'
 require 'eurydice/pelops'
+# require 'eurydice/hector'
 
 module Eurydice
   class EurydiceError < StandardError; end
@@ -9,4 +10,12 @@ module Eurydice
   class KeyspaceExistsError < InvalidRequestError; end
   class NotFoundError < EurydiceError; end
   class TimeoutError < EurydiceError; end
+  
+  def self.connect(*args)
+    Pelops.connect(*args)
+  end
+  
+  def self.disconnect!
+    Pelops.disconnect!
+  end
 end
