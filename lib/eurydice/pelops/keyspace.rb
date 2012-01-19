@@ -73,11 +73,6 @@ module Eurydice
       def column_family_manger
         @column_family_manger ||= @driver.create_column_family_manager(@cluster, @name)
       end
-      
-    private
-    
-      DEFAULT_STRATEGY_CLASS = Cassandra::LOCATOR_STRATEGY_CLASSES[:simple]
-      DEFAULT_STRATEGY_OPTIONS = {:replication_factor => 1}.freeze
     end
   end
 end

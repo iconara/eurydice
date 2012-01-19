@@ -15,15 +15,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.exceptions.ApplicationException'
 end
 
-module Eurydice
-  def self.connect(*args)
-    Pelops.connect(*args)
-  end
-  
-  def self.disconnect!
-    Pelops.disconnect!
-  end
-  
+module Eurydice  
   module Pelops
     def self.connect(options={})
       host = options.fetch(:host, 'localhost')
@@ -33,13 +25,7 @@ module Eurydice
       dynamic_node_discovery = options.fetch(:dynamic_node_discovery, false)
       Cluster.new(::Pelops::Cluster.new(host, port, timeout, dynamic_node_discovery))
     end
-  
-    def self.keyspace(keyspace_name, host='localhost', port=9160, pool_name='eurydice')
-      cluster = ::Pelops::Cluster.new(host, port)
-      ::Pelops::Pelops.add_pool(pool_name, cluster, keyspace_name)
-      Keyspace.new(keyspace_name, cluster, pool_name)
-    end
-  
+
     def self.disconnect!
       ::Pelops::Pelops.shutdown
     end

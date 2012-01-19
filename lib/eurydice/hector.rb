@@ -1,29 +1,30 @@
 # encoding: utf-8
 
-require 'hector-jars'
+require 'hector-core-jars'
 require 'eurydice'
 require 'cassandra'
 
 
 module Hector
-  import 'org.scale7.cassandra.pelops.Cluster'
-  import 'org.scale7.cassandra.pelops.Pelops'
-  import 'org.scale7.cassandra.pelops.Selector'
-  import 'org.scale7.cassandra.pelops.Bytes'
-  import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
-  import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
-  import 'org.scale7.cassandra.pelops.exceptions.ApplicationException'
+  import 'me.prettyprint.hector.api.Cluster'
+  import 'me.prettyprint.hector.api.factory.HFactory'
+  import 'me.prettyprint.cassandra.service.CassandraHostConfigurator'
+  import 'me.prettyprint.cassandra.model.BasicKeyspaceDefinition'
 end
 
 module Eurydice
   module Hector
     def self.connect(options={})
-    end
-  
-    def self.keyspace(keyspace_name)
+      cluster_name = options.fetch(:cluster_name, 'eurydice')
+      configurator = ::Hector::CassandraHostConfigurator.new(options.fetch(:host, 'localhost'))
+      configurator.port = options.fetch(:port, 9160)
+      configurator.cassandra_thrift_socket_timeout = options.fetch(:thrift_timeout, 3000)
+      configurator.auto_discover_hosts = options.fetch(:auto_discover_hosts, false)
+      Cluster.new(::Hector::HFactory.get_or_create_cluster(cluster_name, configurator))
     end
   
     def self.disconnect!
+      raise NotImplementedError, %(The Hector driver has no global disconnect method)
     end
   end
 end

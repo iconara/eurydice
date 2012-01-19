@@ -7,7 +7,7 @@ module Eurydice
       before :all do
         @keyspace_name = "eurydice_test_space_#{rand(1000)}"
         @cf_name = "column_family_#{rand(1000)}"
-        @cluster = Eurydice::Pelops.connect
+        @cluster = Eurydice::Hector.connect
         @keyspace = @cluster.keyspace(@keyspace_name, :create => false)
         @keyspace.drop! rescue nil
         @keyspace.create!

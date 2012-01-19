@@ -77,7 +77,6 @@ module Eurydice
           mutator.execute(get_cl(options))
         end
       end
-      alias_method :insert, :update
     
       def increment(row_key, column_key, amount=1, options={})
         thrift_exception_handler do
@@ -86,9 +85,6 @@ module Eurydice
           mutator.execute(get_cl(options))
         end
       end
-      alias_method :inc, :increment
-      alias_method :incr, :increment
-      alias_method :increment_column, :increment
     
       def key?(row_key, options={})
         thrift_exception_handler do
@@ -98,7 +94,6 @@ module Eurydice
           count > 0
         end
       end
-      alias_method :row_exists?, :key?
     
       def get(row_or_rows, options={})
         case row_or_rows
@@ -106,8 +101,6 @@ module Eurydice
         else get_single(row_or_rows, options)
         end
       end
-      alias_method :get_row, :get
-      alias_method :get_rows, :get
       
       def get_column(row_key, column_key, options={})
         thrift_exception_handler do
@@ -169,7 +162,9 @@ module Eurydice
           rows_to_h(rows, options)
         end
       end
-      
+
+      include ColumnFamilyMethodAliases
+        
     private
     
       EMPTY_STRING = ''.freeze

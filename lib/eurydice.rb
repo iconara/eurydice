@@ -1,8 +1,10 @@
 # encoding: utf-8
 
 require 'java'
+require 'eurydice/common'
 require 'eurydice/pelops'
-# require 'eurydice/hector'
+require 'eurydice/hector'
+
 
 module Eurydice
   class EurydiceError < StandardError; end
