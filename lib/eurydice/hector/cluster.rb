@@ -29,9 +29,18 @@ module Eurydice
       def nodes
       end
       
-      # internal to the Hector implementation
+      # The following methods are internal to the Hector implementation
+      
       def create_keyspace!(definition, block_until_complete=true)
         @cluster.add_keyspace(definition, block_until_complete)
+      end
+      
+      def drop_keyspace!(keyspace_name)
+        @cluster.drop_keyspace(keyspace_name)
+      end
+      
+      def describe_keyspace(keyspace_name)
+        @cluster.describe_keyspace(keyspace_name)
       end
     end
   end

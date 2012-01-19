@@ -11,6 +11,11 @@ module Eurydice
       end
     
       def definition(reload=false)
+        @definition = nil if reload
+        @definition ||= begin
+          ks_def = @cluster.describe_keyspace(@name)
+          ks_def.to_h
+        end
       end
         
       def exists?
@@ -18,40 +23,24 @@ module Eurydice
       end
     
       def create!(options={})
-        strategy_class = options[:strategy_class] || DEFAULT_STRATEGY_CLASS
-        strategy_options = options[:strategy_options]
-        strategy_options = DEFAULT_STRATEGY_OPTIONS if !strategy_options && strategy_class == DEFAULT_STRATEGY_CLASS
-        ks_def = ::Hector::BasicKeyspaceDefinition.new
-        ks_def.name = @name
-        ks_def.strategy_class = strategy_class
-        strategy_options.each do |property, value|
-          ks_def.set_strategy_option(property.to_s, value.to_s)
-        end
-        @cluster.create_keyspace!(ks_def)
+        ks_properties = options.merge(:name => @name)
+        ks_properties[:strategy_class] = DEFAULT_STRATEGY_CLASS unless ks_properties.key?(:strategy_class)
+        ks_properties[:strategy_options] = DEFAULT_STRATEGY_OPTIONS if !ks_properties.key?(:strategy_options) && ks_properties[:strategy_class] == DEFAULT_STRATEGY_CLASS
+        @cluster.create_keyspace!(::Hector::Ddl::KeyspaceDefinition.from_h(ks_properties))
       end
     
       def drop!
+        @cluster.drop_keyspace!(@name)
       end
     
       def column_families(reload=false)
+        definition(reload)[:column_families].keys
       end
     
       def column_family(name, options={})
-      end
-    
-      def create_mutator
-      end
-    
-      def create_selector
-      end
-    
-      def create_row_deletor
-      end
-
-      def keyspace_manager
-      end
-    
-      def column_family_manger
+        cf = ColumnFamily.new(name, self)
+        cf.create! if options.fetch(:create, true) && !cf.exists?
+        cf
       end
     end
   end

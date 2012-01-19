@@ -5,13 +5,17 @@ module Eurydice
     class ColumnFamily
       attr_reader :name, :keyspace
     
-      def initialize(keyspace, name)
+      def initialize(name, keyspace)
+        @name = name
+        @keyspace = keyspace
       end
     
       def definition(reload=true)
+        @keyspace.definition(reload)[:column_families][@name]
       end
     
       def exists?
+        !!definition(true)
       end
     
       def create!(options={})

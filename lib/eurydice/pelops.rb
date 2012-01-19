@@ -15,7 +15,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.exceptions.ApplicationException'
 end
 
-module Eurydice  
+module Eurydice
   module Pelops
     def self.connect(options={})
       host = options.fetch(:host, 'localhost')
@@ -30,9 +30,7 @@ module Eurydice
       ::Pelops::Pelops.shutdown
     end
 
-    module ByteHelpers
-      extend self
-      
+    module Bytes
       def empty_pelops_bytes
         ::Pelops::Bytes::EMPTY
       end
@@ -45,15 +43,7 @@ module Eurydice
           ::Pelops::Bytes.new(obj.to_s.to_java_bytes)
         end
       end
-      
-      def to_nio_bytes(str)
-        to_pelops_bytes(str).bytes
-      end
-      
-      def to_byte_array(str)
-        str.to_java_bytes
-      end
-      
+    
       def pelops_bytes_to_s(pb)
         String.from_java_bytes(pb.to_byte_array)
       end
@@ -104,6 +94,11 @@ module Eurydice
         transform_thrift_exception(e)
       end
     end
+  end
+  
+  module Bytes
+    include Pelops::Bytes
+    extend Pelops::Bytes
   end
 end
 

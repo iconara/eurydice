@@ -4,7 +4,7 @@ module Eurydice
   module Pelops
     class ColumnFamily
       include ExceptionHelpers
-      include ByteHelpers
+      include Bytes
     
       attr_reader :name, :keyspace
     

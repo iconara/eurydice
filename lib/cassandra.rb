@@ -141,7 +141,7 @@ module Cassandra
       h.reduce(self.new) do |col_def, (field_name, field_value)|
         case field_name.to_sym
         when :name
-          field_value = Eurydice::Pelops::ByteHelpers.to_nio_bytes(field_value)
+          field_value = Eurydice::Bytes.to_nio_bytes(field_value)
         when :index_type
           field_value = Cassandra::IndexType.valueOf(field_value.to_s.upcase)
         when :validation_class
@@ -160,7 +160,7 @@ module Cassandra
         acc[field_name] = begin
           case field_name
           when :name
-            Eurydice::Pelops::ByteHelpers.nio_bytes_to_s(get_field_value(field))
+            Eurydice::Bytes.nio_bytes_to_s(get_field_value(field))
           when :index_type
             value = get_field_value(field)
             value.toString.downcase.to_sym if value

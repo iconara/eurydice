@@ -9,7 +9,6 @@ module Hector
   import 'me.prettyprint.hector.api.Cluster'
   import 'me.prettyprint.hector.api.factory.HFactory'
   import 'me.prettyprint.cassandra.service.CassandraHostConfigurator'
-  import 'me.prettyprint.cassandra.model.BasicKeyspaceDefinition'
 end
 
 module Eurydice
@@ -29,6 +28,7 @@ module Eurydice
   end
 end
 
+require_relative 'hector/ddl'
 require_relative 'hector/cluster'
 require_relative 'hector/keyspace'
 require_relative 'hector/column_family'

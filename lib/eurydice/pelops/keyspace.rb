@@ -53,6 +53,8 @@ module Eurydice
         cf.create! if create && !cf.exists?
         cf
       end
+      
+      # The following methods are internal to the Pelops implementation
     
       def create_mutator
         @driver.create_mutator(@pool_name)
