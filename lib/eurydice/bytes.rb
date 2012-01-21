@@ -6,21 +6,25 @@ module Eurydice
     extend self
       
     def to_nio_bytes(str)
-      to_pelops_bytes(str).bytes
+      java.nio.ByteBuffer.wrap(to_byte_array(str))
     end
       
     def to_byte_array(str)
       str.to_java_bytes
     end
       
-    def nio_bytes_to_s(nb)
-      raise NotImplementedError, 'Only implemented in Eurydice::Pelops::Bytes'
+    def nio_bytes_to_s(nb, type=:string)
+      case type
+      when :long then nb.get_long
+      else
+        byte_array_to_s(java.util.Arrays.copy_of_range(nb.array, nb.position, nb.limit))
+      end
     end
       
-    def byte_array_to_s(ba, type=nil)
+    def byte_array_to_s(ba, type=:string)
       case type
       when :long
-        raise NotImplementedError, 'Only implemented in Eurydice::Pelops::Bytes'
+        java.nio.ByteBuffer.wrap(ba).get_long
       else
         String.from_java_bytes(ba)
       end

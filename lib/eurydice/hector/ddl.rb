@@ -14,7 +14,7 @@ module Hector
     import 'me.prettyprint.hector.api.ddl.KeyspaceDefinition'
     import 'me.prettyprint.hector.api.ddl.ColumnFamilyDefinition'
     import 'me.prettyprint.hector.api.ddl.ColumnDefinition'
-  
+    import 'me.prettyprint.hector.api.ddl.ColumnType'
     import 'me.prettyprint.hector.api.ddl.ComparatorType'
     
     COMPARATOR_TYPES = {
@@ -103,9 +103,10 @@ module Hector
         {
           :name => name,
           :comment => comment,
+          :column_type => (column_type == ColumnType::STANDARD ? :standard : :super),
           :comparator_type => REVERSE_COMPARATOR_TYPES[comparator_type],
-          :key_validation_class => REVERSE_COMPARATOR_TYPES[key_validation_class],
-          :default_validation_class => REVERSE_COMPARATOR_TYPES[default_validation_class],
+          :key_validation_class => key_validation_class,
+          :default_validation_class => default_validation_class,
           :subcomparator_type => REVERSE_COMPARATOR_TYPES[sub_comparator_type],
           :column_metadata => column_metadata_h
         }

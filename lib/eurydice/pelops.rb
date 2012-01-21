@@ -35,6 +35,10 @@ module Eurydice
         ::Pelops::Bytes::EMPTY
       end
       
+      def to_nio_bytes(str)
+        to_pelops_bytes(str).bytes
+      end
+      
       def to_pelops_bytes(obj, type=nil)
         case type
         when :long

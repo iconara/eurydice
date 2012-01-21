@@ -31,8 +31,9 @@ module Eurydice
       
       # The following methods are internal to the Hector implementation
       
-      def create_keyspace!(definition, block_until_complete=true)
-        @cluster.add_keyspace(definition, block_until_complete)
+      def create_keyspace!(properties, block_until_complete=true)
+        @cluster.add_keyspace(::Hector::Ddl::KeyspaceDefinition.from_h(properties), block_until_complete)
+        ::Hector::HFactory.createKeyspace(properties[:name], @cluster);
       end
       
       def drop_keyspace!(keyspace_name)
@@ -41,6 +42,18 @@ module Eurydice
       
       def describe_keyspace(keyspace_name)
         @cluster.describe_keyspace(keyspace_name)
+      end
+      
+      def add_column_family(properties, block_until_complete=true)
+        @cluster.add_column_family(::Hector::Ddl::ColumnFamilyDefinition.from_h(properties), block_until_complete)
+      end
+      
+      def drop_column_family(keyspace_name, cf_name)
+        @cluster.drop_column_family(keyspace_name, cf_name)
+      end
+      
+      def truncate_column_family(keyspace_name, cf_name)
+        @cluster.truncate(keyspace_name, cf_name)
       end
     end
   end

@@ -9,6 +9,14 @@ module Hector
   import 'me.prettyprint.hector.api.Cluster'
   import 'me.prettyprint.hector.api.factory.HFactory'
   import 'me.prettyprint.cassandra.service.CassandraHostConfigurator'
+  import 'me.prettyprint.cassandra.service.template.ThriftColumnFamilyTemplate'
+  
+  module Serializer
+    import 'me.prettyprint.cassandra.serializers.StringSerializer'
+    import 'me.prettyprint.cassandra.serializers.LongSerializer'
+    import 'me.prettyprint.cassandra.serializers.ByteBufferSerializer'
+    import 'me.prettyprint.cassandra.serializers.BytesArraySerializer'
+  end
 end
 
 module Eurydice
