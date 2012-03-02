@@ -568,5 +568,26 @@ module Eurydice
         end
       end
     end
+    
+    context 'batch mutation' do
+      before do
+        @cf = @keyspace.column_family('test_family')
+        @cf.truncate!
+      end
+      
+      describe '#batch' do
+        it 'yields a batch object which can be used to perform multiple mutations' do
+          @cf.batch do |batch|
+            batch.update('first_row', 'col1' => 'hello1', 'col2' => 'hello2')
+            batch.update('second_row', 'col1' => 'hello3', 'xyz' => 'hello', 'abc' => 'hello')
+            batch.delete_column('first_row', 'col2')
+            batch.delete_columns('second_row', %w(xyz abc))
+            batch.update('first_row', 'col3' => 'hello4')
+          end
+          @cf.get('first_row').should == {'col1' => 'hello1', 'col3' => 'hello4'}
+          @cf.get('second_row').should == {'col1' => 'hello3'}
+        end
+      end
+    end
   end
 end

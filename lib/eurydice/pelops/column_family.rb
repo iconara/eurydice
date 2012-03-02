@@ -47,34 +47,20 @@ module Eurydice
       end
     
       def delete_column(row_key, column_key, options={})
-        thrift_exception_handler do
-          mutator = @keyspace.create_mutator
-          mutator.delete_column(@name, row_key, to_pelops_bytes(column_key))
-          mutator.execute(get_cl(options))
+        batch(options) do |b|
+          b.delete_column(row_key, column_key)
         end
       end
     
       def delete_columns(row_key, column_keys, options={})
-        thrift_exception_handler do
-          mutator = @keyspace.create_mutator
-          mutator.delete_columns(@name, row_key, column_keys.map { |k| to_pelops_bytes(k) })
-          mutator.execute(get_cl(options))
+        batch(options) do |b|
+          b.delete_columns(row_key, column_keys)
         end
       end
     
       def update(row_key, properties, options={})
-        thrift_exception_handler do
-          types = options[:validations] || {}
-          key_type = options[:comparator]
-          mutator = @keyspace.create_mutator
-          columns = properties.map do |k, v|
-            key = to_pelops_bytes(k, key_type)
-            value = to_pelops_bytes(v, types[k])
-            ttl = options.fetch(:ttl, mutator.class::NO_TTL)
-            mutator.new_column(key, value, ttl)
-          end
-          mutator.write_columns(@name, row_key, columns)
-          mutator.execute(get_cl(options))
+        batch(options) do |b|
+          b.update(row_key, properties, options)
         end
       end
       alias_method :insert, :update
@@ -170,6 +156,15 @@ module Eurydice
         end
       end
       
+      def batch(options={})
+        batch = Batch.new(@name, @keyspace)
+        if block_given?
+          yield batch
+          batch.execute!(options)
+        end
+        nil
+      end
+      
     private
     
       EMPTY_STRING = ''.freeze
@@ -252,10 +247,53 @@ module Eurydice
         end
         return key, value
       end
-  
-      def get_cl(options)
-        cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
-        Cassandra::CONSISTENCY_LEVELS[cl]
+      
+      module ConsistencyLevelHelpers
+        def get_cl(options)
+          cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
+          Cassandra::CONSISTENCY_LEVELS[cl]
+        end
+      end
+      
+      include ConsistencyLevelHelpers
+      
+      class Batch
+        include ExceptionHelpers
+        include ByteHelpers
+        include ConsistencyLevelHelpers
+        
+        def initialize(name, keyspace)
+          @name = name
+          @keyspace = keyspace
+          @mutator = @keyspace.create_mutator
+        end
+        
+        def delete_column(row_key, column_key)
+          @mutator.delete_column(@name, row_key, to_pelops_bytes(column_key))
+        end
+    
+        def delete_columns(row_key, column_keys)
+          @mutator.delete_columns(@name, row_key, column_keys.map { |k| to_pelops_bytes(k) })
+        end
+    
+        def update(row_key, properties, options={})
+          types = options[:validations] || {}
+          key_type = options[:comparator]
+          columns = properties.map do |k, v|
+            key = to_pelops_bytes(k, key_type)
+            value = to_pelops_bytes(v, types[k])
+            ttl = options.fetch(:ttl, @mutator.class::NO_TTL)
+            @mutator.new_column(key, value, ttl)
+          end
+          @mutator.write_columns(@name, row_key, columns)
+        end
+        alias_method :insert, :update
+        
+        def execute!(options={})
+          thrift_exception_handler do
+            @mutator.execute(get_cl(options))
+          end
+        end
       end
     end
   end
