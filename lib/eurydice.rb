@@ -9,4 +9,5 @@ module Eurydice
   class KeyspaceExistsError < InvalidRequestError; end
   class NotFoundError < EurydiceError; end
   class TimeoutError < EurydiceError; end
+  class BatchError < EurydiceError; end
 end

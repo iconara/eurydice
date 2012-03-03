@@ -5,6 +5,7 @@ module Eurydice
     class ColumnFamily
       include ExceptionHelpers
       include ByteHelpers
+      include ConsistencyLevelHelpers
     
       attr_reader :name, :keyspace
     
@@ -47,20 +48,20 @@ module Eurydice
       end
     
       def delete_column(row_key, column_key, options={})
-        batch(options) do |b|
-          b.delete_column(row_key, column_key)
+        @keyspace.batch(options) do |b|
+          b.delete_column(@name, row_key, column_key)
         end
       end
     
       def delete_columns(row_key, column_keys, options={})
-        batch(options) do |b|
-          b.delete_columns(row_key, column_keys)
+        @keyspace.batch(options) do |b|
+          b.delete_columns(@name, row_key, column_keys)
         end
       end
     
       def update(row_key, properties, options={})
-        batch(options) do |b|
-          b.update(row_key, properties, options)
+        @keyspace.batch(options) do |b|
+          b.update(@name, row_key, properties, options)
         end
       end
       alias_method :insert, :update
@@ -246,47 +247,6 @@ module Eurydice
           else byte_array_to_s(column.get_value, types[key])
         end
         return key, value
-      end
-      
-      include ConsistencyLevelHelpers
-      
-      class Batch
-        include ExceptionHelpers
-        include ByteHelpers
-        include ConsistencyLevelHelpers
-        
-        def initialize(name, keyspace)
-          @name = name
-          @keyspace = keyspace
-          @mutator = @keyspace.create_mutator
-        end
-        
-        def delete_column(row_key, column_key)
-          @mutator.delete_column(@name, row_key, to_pelops_bytes(column_key))
-        end
-    
-        def delete_columns(row_key, column_keys)
-          @mutator.delete_columns(@name, row_key, column_keys.map { |k| to_pelops_bytes(k) })
-        end
-    
-        def update(row_key, properties, options={})
-          types = options[:validations] || {}
-          key_type = options[:comparator]
-          columns = properties.map do |k, v|
-            key = to_pelops_bytes(k, key_type)
-            value = to_pelops_bytes(v, types[k])
-            ttl = options.fetch(:ttl, @mutator.class::NO_TTL)
-            @mutator.new_column(key, value, ttl)
-          end
-          @mutator.write_columns(@name, row_key, columns)
-        end
-        alias_method :insert, :update
-        
-        def execute!(options={})
-          thrift_exception_handler do
-            @mutator.execute(get_cl(options))
-          end
-        end
       end
     end
   end

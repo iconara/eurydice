@@ -4,6 +4,7 @@ module Eurydice
   module Pelops
     class Keyspace
       include ExceptionHelpers
+      include ConsistencyLevelHelpers
     
       attr_reader :name
     
@@ -12,6 +13,7 @@ module Eurydice
         @cluster = cluster
         @pool_name = pool_name
         @driver = driver
+        @batch_key = "#{@name}-batch"
       end
     
       def definition(reload=false)
@@ -74,10 +76,65 @@ module Eurydice
         @column_family_manger ||= @driver.create_column_family_manager(@cluster, @name)
       end
       
+      def batch(options={})
+        if batch_in_progress?
+          check_batch_options!(options)
+          yield current_batch_mutator
+        else
+          start_batch(options)
+          begin
+            yield current_batch_mutator
+          rescue
+            clear_batch!
+            raise
+          end
+          end_batch!
+        end
+      end
+      
     private
     
       DEFAULT_STRATEGY_CLASS = Cassandra::LOCATOR_STRATEGY_CLASSES[:simple]
       DEFAULT_STRATEGY_OPTIONS = {:replication_factor => 1}.freeze
+
+      def start_batch(options={})
+        thread_local_storage[@batch_key] ||= {
+          :mutator => Mutator.new(self),
+          :options => options
+        }
+      end
+      
+      def batch_in_progress?
+        !!thread_local_storage[@batch_key]
+      end
+      
+      def check_batch_options!(options)
+        required_cl = get_cl(options)
+        current_cl = get_cl(current_batch_options)
+        raise BatchError, %(Inconsistent consistency levels! Current batch: #{current_cl}, required: #{required_cl}) unless required_cl == current_cl
+      end
+      
+      def current_batch_mutator
+        thread_local_storage[@batch_key][:mutator]
+      end
+      
+      def current_batch_options
+        thread_local_storage[@batch_key][:options]
+      end
+
+      def clear_batch!
+        thread_local_storage.delete(@batch_key)
+        nil
+      end
+      
+      def end_batch!
+        current_batch_mutator.execute!(current_batch_options)
+        clear_batch!
+      end
+      
+      def thread_local_storage
+        Thread.current[:eurydice_pelops] ||= {}
+      end
     end
   end
 end

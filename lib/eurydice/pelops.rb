@@ -128,6 +128,7 @@ module Eurydice
   end
 end
 
+require_relative 'pelops/mutator'
 require_relative 'pelops/cluster'
 require_relative 'pelops/keyspace'
 require_relative 'pelops/column_family'

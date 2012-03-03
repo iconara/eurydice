@@ -76,5 +76,67 @@ module Eurydice
         definition[:strategy_options].should == {:replication_factor => 1}
       end
     end
+  
+    describe '#batch' do
+      before do
+        @keyspace = @cluster.keyspace(@keyspace_name)
+        @cf1 = @keyspace.column_family('cf1')
+        @cf2 = @keyspace.column_family('cf2')
+      end
+      
+      it 'starts and executes a batch' do
+        @keyspace.batch do
+          @cf1.insert('row1', 'foo' => 'bar', 'baz' => 'qux')
+          @cf1.insert('row2', 'xyz' => '123', 'abc' => '123')
+          @cf2.insert('item1', 'hello' => 'world')
+          @cf1.delete_column('row2', 'abc')
+          @cf1.get('row1').should be_nil
+          @cf1.get('row2').should be_nil
+          @cf2.get('item1').should be_nil
+        end
+        @cf1.get('row1').should == {'foo' => 'bar', 'baz' => 'qux'}
+        @cf1.get('row2').should == {'xyz' => '123'}
+        @cf2.get('item1').should == {'hello' => 'world'}
+      end
+      
+      it 'only has one active batch' do
+        @keyspace.batch do
+          @keyspace.batch do
+            @keyspace.batch do
+              @cf1.insert('row1', 'foo' => 'bar')
+            end
+            @cf1.get('row1').should be_nil
+            @keyspace.batch do
+              @cf1.insert('row1', 'baz' => 'qux')
+            end
+            @cf1.get('row1').should be_nil
+          end
+          @cf1.get('row1').should be_nil
+        end
+        @cf1.get('row1').should == {'foo' => 'bar', 'baz' => 'qux'}
+      end
+      
+      context 'conflicting batch options' do
+        it 'complains when the options given to the #batch contain different consistency levels' do
+          expect {
+            @keyspace.batch(:cl => :one) do
+              @keyspace.batch(:cl => :quorum) do
+                @cf1.insert('row1', 'foo' => 'bar')
+              end
+            end
+          }.to raise_error(BatchError)
+        end
+
+        it 'complains when the options given to a mutation call has different consistency levels than the options to the #batch call' do
+          expect {
+            @keyspace.batch(:cl => :one) do
+              @keyspace.batch do
+                @cf1.insert('row1', {'foo' => 'bar'}, {:cl => :quorum})
+              end
+            end
+          }.to raise_error(BatchError)
+        end
+      end
+    end
   end
 end
