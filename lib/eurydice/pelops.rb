@@ -124,6 +124,10 @@ module Eurydice
         cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
         Cassandra::CONSISTENCY_LEVELS[cl]
       end
+      
+      def default_cl?(options)
+        !(options.key?(:consistency_level) || options.key?(:cl))
+      end
     end
   end
 end

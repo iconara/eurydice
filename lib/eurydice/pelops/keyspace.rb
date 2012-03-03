@@ -109,9 +109,11 @@ module Eurydice
       end
       
       def check_batch_options!(options)
-        required_cl = get_cl(options)
-        current_cl = get_cl(current_batch_options)
-        raise BatchError, %(Inconsistent consistency levels! Current batch: #{current_cl}, required: #{required_cl}) unless required_cl == current_cl
+        unless default_cl?(options)
+          required_cl = get_cl(options)
+          current_cl = get_cl(current_batch_options)
+          raise BatchError, %(Inconsistent consistency levels! Current batch: #{current_cl}, required: #{required_cl}) unless required_cl == current_cl
+        end
       end
       
       def current_batch_mutator

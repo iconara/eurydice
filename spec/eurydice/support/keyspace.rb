@@ -116,6 +116,19 @@ module Eurydice
         @cf1.get('row1').should == {'foo' => 'bar', 'baz' => 'qux'}
       end
       
+      it 'aborts the batch on error' do
+        begin
+          @keyspace.batch do
+            @cf1.insert('row1', 'foo' => 'bar')
+            @cf1.insert('row2', 'foo' => 'bar')
+            raise 'hurgh!'
+          end
+        rescue
+        end
+        @cf1.get('row1').should be_nil
+        @cf1.get('row2').should be_nil
+      end
+      
       context 'conflicting batch options' do
         it 'complains when the options given to the #batch contain different consistency levels' do
           expect {
@@ -135,6 +148,28 @@ module Eurydice
               end
             end
           }.to raise_error(BatchError)
+        end
+        
+        it 'does not complain when no explicit options are specified' do
+          expect {
+            @keyspace.batch(:cl => :quorum) do
+              @keyspace.batch do
+                @cf1.insert('row1', {'foo' => 'bar'})
+              end
+            end
+          }.not_to raise_error(BatchError)          
+        end
+        
+        it 'aborts the batch on conflicting consistency levels' do
+          begin
+            @keyspace.batch(:cl => :quorum) do
+              @cf1.insert('row1', {'foo' => 'bar'}, {:cl => :quorum})
+              @cf1.insert('row2', {'foo' => 'bar'}, {:cl => :one})
+            end
+          rescue
+          end
+          @cf1.get('row1').should be_nil
+          @cf1.get('row2').should be_nil
         end
       end
     end
