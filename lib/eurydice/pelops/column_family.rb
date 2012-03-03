@@ -248,13 +248,6 @@ module Eurydice
         return key, value
       end
       
-      module ConsistencyLevelHelpers
-        def get_cl(options)
-          cl = options.fetch(:consistency_level, options.fetch(:cl, :one))
-          Cassandra::CONSISTENCY_LEVELS[cl]
-        end
-      end
-      
       include ConsistencyLevelHelpers
       
       class Batch
