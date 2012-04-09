@@ -9,11 +9,6 @@ module Eurydice
           @cluster.keyspace(@keyspace_name).drop!
         end
       end
-      
-      it 'can connect' do
-        @cluster = Eurydice.connect
-        @cluster.should be_connected
-      end
         
       after do
         @keyspace.drop! rescue nil

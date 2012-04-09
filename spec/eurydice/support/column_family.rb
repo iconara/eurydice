@@ -116,7 +116,7 @@ module Eurydice
       end
         
       after do
-        @cf.drop!
+        @cf.drop! rescue nil
       end
     
       it 'returns column family metadata' do

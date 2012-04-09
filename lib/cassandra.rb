@@ -124,8 +124,11 @@ module Cassandra
         field_name = field.field_name.to_sym
         case field_name
         when :column_metadata
-          column_hs = get_field_value(field).map { |col_def| col_def.to_h }
-          acc[field_name] = Hash[column_hs.map { |col_h| [col_h[:name], col_h] }]
+          value = get_field_value(field)
+          if value
+            column_hs = value.map { |col_def| col_def.to_h }
+            acc[field_name] = Hash[column_hs.map { |col_h| [col_h[:name], col_h] }]
+          end
         when :column_type
           acc[field_name] = get_field_value(field).downcase.to_sym
         else

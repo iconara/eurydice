@@ -94,9 +94,6 @@ module Eurydice
       
     private
     
-      DEFAULT_STRATEGY_CLASS = Cassandra::LOCATOR_STRATEGY_CLASSES[:simple]
-      DEFAULT_STRATEGY_OPTIONS = {:replication_factor => 1}.freeze
-
       def start_batch(options={})
         thread_local_storage[@batch_key] ||= {
           :mutator => Mutator.new(self),
