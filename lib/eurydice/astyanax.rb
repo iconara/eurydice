@@ -15,6 +15,7 @@ module Astyanax
   java_import 'com.netflix.astyanax.model.ColumnSlice'
   java_import 'com.netflix.astyanax.serializers.BytesArraySerializer'
   java_import 'com.netflix.astyanax.impl.AstyanaxConfigurationImpl'
+  java_import 'com.netflix.astyanax.shallows.EmptyColumn'
   java_import 'com.netflix.astyanax.connectionpool.NodeDiscoveryType'
   java_import 'com.netflix.astyanax.connectionpool.impl.ConnectionPoolConfigurationImpl'
   java_import 'com.netflix.astyanax.connectionpool.impl.CountingConnectionPoolMonitor'

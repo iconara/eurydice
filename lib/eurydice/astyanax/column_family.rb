@@ -57,7 +57,14 @@ module Eurydice
         @keyspace.batch(options) do |b|
           row = b.with_row(cf_client, to_bytes(row_key))
           properties.each do |key, value|
-            row.put_column(to_bytes(key), value, options[:ttl])
+            case value
+            when Integer
+              row.put_column(to_bytes(key), value, options[:ttl])
+            when nil
+              row.put_empty_column(to_bytes(key), options[:ttl])
+            else
+              row.put_column(to_bytes(key), to_bytes(value), options[:ttl])
+            end
           end
         end
       end
@@ -222,15 +229,14 @@ module Eurydice
           value = begin
             if counter_columns?
               column.long_value
+            elsif value_types[column_key] == :long
+              column.long_value
             elsif value_types[column_key]
-              case value_types[column_key]
-              when :long
-                column.long_value
-              else
-                column.string_value
-              end
+              raise ArgumentError, %[Unsupported validation for "#{column_key}": "#{value_types[column_key]}"]
             else
-              column.string_value
+              v = String.from_java_bytes(column.byte_array_value)
+              v = nil if v && v.empty?
+              v
             end
           end
           acc[column_key] = value

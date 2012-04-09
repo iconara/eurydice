@@ -216,7 +216,12 @@ module Eurydice
             end
           end
         end
-          
+        
+        it 'writes a column with nil value' do
+          @cf.update('ABC', 'foo' => nil)
+          @cf.get('ABC').should == {'foo' => nil}
+        end
+
         context 'with explicit column data types' do
           it 'writes integer columns keys as longs' do
             @cf.insert('ABC', {42 => 'foo'}, :comparator => :long)
