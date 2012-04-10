@@ -1,6 +1,6 @@
 source :rubygems
 
-gem 'hector-core-jars', :path => '/Users/theo/Documents/Code/jar-gems/hector-core-jars'
+gem 'hector-core-jars'
 
 gemspec
 

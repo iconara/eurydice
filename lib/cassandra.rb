@@ -1,5 +1,8 @@
 # encoding: utf-8
 
+require 'cassandra-jars'
+
+
 module Thrift
   import 'org.apache.thrift.transport.TTransportException'
 end

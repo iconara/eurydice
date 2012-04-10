@@ -1,8 +1,8 @@
 # encoding: utf-8
 
 require 'hector-core-jars'
-require 'eurydice'
 require 'cassandra'
+require 'eurydice'
 
 
 module Hector

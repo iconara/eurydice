@@ -4,17 +4,14 @@ PATH
     eurydice (1.2-java)
       pelops-jars (>= 1.3.0)
 
-PATH
-  remote: /Users/theo/Documents/Code/jar-gems/hector-core-jars
-  specs:
-    hector-core-jars (1.0.r2-java)
-
 GEM
   remote: http://rubygems.org/
   specs:
     bouncy-castle-java (1.5.0146.1)
     cassandra-jars (1.0.0-java)
     diff-lcs (1.1.3)
+    hector-core-jars (1.0.r2-java)
+      cassandra-jars (~> 1.0.0)
     jruby-openssl (0.7.4)
       bouncy-castle-java
     pelops-jars (1.3.0-java)
@@ -34,7 +31,7 @@ PLATFORMS
 
 DEPENDENCIES
   eurydice!
-  hector-core-jars!
+  hector-core-jars
   jruby-openssl
   rake
   rspec (= 2.7.0)
