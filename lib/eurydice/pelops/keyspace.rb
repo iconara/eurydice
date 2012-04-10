@@ -84,12 +84,12 @@ module Eurydice
           start_batch(options)
           begin
             yield current_batch_mutator
-          rescue
+            end_batch!
+          ensure
             clear_batch!
-            raise
           end
-          end_batch!
         end
+        nil
       end
       
     private
@@ -126,12 +126,10 @@ module Eurydice
 
       def clear_batch!
         thread_local_storage.delete(@batch_key)
-        nil
       end
       
       def end_batch!
         current_batch_mutator.execute!(current_batch_options)
-        clear_batch!
       end
       
       def thread_local_storage
