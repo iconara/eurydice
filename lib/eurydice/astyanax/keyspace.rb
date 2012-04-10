@@ -54,12 +54,12 @@ module Eurydice
           start_batch(options)
           begin
             yield current_batch_mutator
-          rescue
+            end_batch!
+          ensure
             clear_batch!
-            raise
           end
-          end_batch!
         end
+        nil
       end
 
       # internal methods
@@ -106,6 +106,7 @@ module Eurydice
       end
 
       def clear_batch!
+        thread_local_storage[@batch_key] = nil
         thread_local_storage.delete(@batch_key)
         nil
       end
@@ -113,7 +114,6 @@ module Eurydice
       def end_batch!
         current_batch_mutator.set_consistency_level(get_cl(current_batch_options))
         current_batch_mutator.execute
-        clear_batch!
       end
       
       def thread_local_storage
