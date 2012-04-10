@@ -150,8 +150,8 @@ module Eurydice
 
     private
 
-      FIRST_COLUMN = "\u0000".freeze
-      LAST_COLUMN = "\uFFFF".freeze
+      FIRST_COLUMN = "\0".freeze
+      LAST_COLUMN = ''.freeze
       UINT64 = 'Q'.freeze
 
       module BytesHelper
