@@ -234,6 +234,7 @@ module Eurydice
         else
           columns.reduce({}) do |acc, column|
             key, value = column_to_kv(column, options)
+            value = nil if value && value.empty?
             acc[key] = value
             acc
           end
