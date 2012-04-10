@@ -4,7 +4,6 @@ $: << '/Users/theo/Documents/Code/jar-gems/astyanax-jars/lib'
 
 require 'astyanax-jars'
 require 'eurydice'
-require 'cassandra'
 
 
 module Astyanax
