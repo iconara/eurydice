@@ -13,9 +13,11 @@ module Eurydice
         @keyspace, @name = keyspace, name
       end
     
-      def definition(reload=true)
-        @definition = nil if reload
-        @definition ||= @keyspace.definition(true)[:column_families][@name]
+      def definition(reload=false)
+        thrift_exception_handler do
+          @definition = nil if reload
+          @definition ||= @keyspace.definition(true)[:column_families][@name]
+        end
       end
     
       def exists?
