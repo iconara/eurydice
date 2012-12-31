@@ -234,7 +234,6 @@ module Eurydice
         else
           columns.reduce({}) do |acc, column|
             key, value = column_to_kv(column, options)
-            value = nil if value && value.empty?
             acc[key] = value
             acc
           end
@@ -245,11 +244,17 @@ module Eurydice
         types = options[:validations] || {}
         key_type = options[:comparator]
         key = byte_array_to_s(column.get_name, key_type)
-        value = if counter_columns? 
-          then column.get_value 
-          else byte_array_to_s(column.get_value, types[key])
+        value = begin
+          if counter_columns?
+            column.get_value
+          elsif types[key] == :long
+            byte_array_to_s(column.get_value, types[key])
+          else
+            str = byte_array_to_s(column.get_value, types[key])
+            str unless str.empty?
+          end
         end
-        return key, value
+        [key, value]
       end
     end
   end
