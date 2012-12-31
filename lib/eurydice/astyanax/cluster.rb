@@ -13,8 +13,9 @@ module Eurydice
       end
 
       def keyspace(keyspace_name, options={})
+        create = options.fetch(:create, true)
         ks = Keyspace.new(self, keyspace_name)
-        ks.create! unless options[:create] == false
+        ks.create! if create && !ks.exists?
         ks
       end
 
