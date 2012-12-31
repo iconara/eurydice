@@ -414,6 +414,7 @@ module Eurydice
         it 'returns nil if no column was found' do
           @cf.insert('ABC', 'xyz' => 'abc', 'hello' => 'world', 'foo' => 'bar')
           @cf.get_column('XYZ', 'abc').should be_nil
+          @cf.get_column('ABC', 'zwonk').should be_nil
         end
           
         it 'returns the value of a counter column' do
