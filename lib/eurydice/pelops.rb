@@ -13,6 +13,7 @@ module Pelops
   import 'org.scale7.cassandra.pelops.exceptions.InvalidRequestException'
   import 'org.scale7.cassandra.pelops.exceptions.NotFoundException'
   import 'org.scale7.cassandra.pelops.exceptions.ApplicationException'
+  import 'org.scale7.cassandra.pelops.exceptions.TimedOutException'
 end
 
 module Eurydice
@@ -105,7 +106,7 @@ module Eurydice
             raise NotFoundError, e.cause.message, e.backtrace
           when ::Pelops::ApplicationException
             raise EurydiceError, e.cause.message, e.backtrace
-          when Thrift::TTransportException
+          when Thrift::TTransportException, ::Pelops::TimedOutException
             raise TimeoutError, e.cause.message, e.backtrace
           end
         end
