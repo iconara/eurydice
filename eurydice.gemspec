@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.rubyforge_project = 'eurydice'
   
   s.add_dependency 'pelops-jars', '>= 1.3.0'
+  s.add_dependency 'astyanax-jars', '>= 0.8.0'
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = %w(lib)

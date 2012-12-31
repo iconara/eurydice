@@ -1,7 +1,5 @@
 # encoding: utf-8
 
-$: << '/Users/theo/Documents/Code/jar-gems/astyanax-jars/lib'
-
 require 'astyanax-jars'
 require 'eurydice'
 
