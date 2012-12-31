@@ -224,24 +224,33 @@ module Eurydice
         return nil if column_list.size == 0
         key_type = options[:comparator]
         value_types = options[:validations] || {}
-        column_list.reduce({}) do |acc, column|
-          column_key = from_bytes(column.name, key_type)
-          value = begin
-            if counter_columns?
-              column.long_value
-            elsif value_types[column_key] == :long
-              column.long_value
-            elsif value_types[column_key]
-              raise ArgumentError, %[Unsupported validation for "#{column_key}": "#{value_types[column_key]}"]
-            else
-              v = String.from_java_bytes(column.byte_array_value)
-              v = nil if v && v.empty?
-              v
-            end
-          end
-          acc[column_key] = value
-          acc
+        columns_h = {}
+        i = 0
+        while i < column_list.size
+          column = column_list.get_column_by_index(i)
+          key, value = column_to_h(column, key_type, value_types)
+          columns_h[key] = value
+          i += 1
         end
+        columns_h
+      end
+
+      def column_to_h(column, key_type, value_types)
+        key = from_bytes(column.name, key_type)
+        value = begin
+          if counter_columns?
+            column.long_value
+          elsif value_types[key] == :long
+            column.long_value
+          elsif value_types[key]
+            raise ArgumentError, %[Unsupported validation for "#{key}": "#{value_types[key]}"]
+          else
+            v = String.from_java_bytes(column.byte_array_value)
+            v = nil if v && v.empty?
+            v
+          end
+        end
+        [key, value]
       end
 
       def rows_to_h(row_list, options={})
