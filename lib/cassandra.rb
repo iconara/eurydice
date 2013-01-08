@@ -28,14 +28,26 @@ module Cassandra
   }.freeze
 
   MARSHAL_TYPES = {
-    :bytes          => 'org.apache.cassandra.db.marshal.BytesType'.freeze,
-    :ascii          => 'org.apache.cassandra.db.marshal.AsciiType'.freeze,
-    :utf8           => 'org.apache.cassandra.db.marshal.UTF8Type'.freeze,
-    :long           => 'org.apache.cassandra.db.marshal.LongType'.freeze,
-    :lexical_uuid   => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
-    :time_uuid      => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze,
-    :counter        => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze,
-    :counter_column => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze
+    :ascii             => 'org.apache.cassandra.db.marshal.AsciiType'.freeze,
+    :boolean           => 'org.apache.cassandra.db.marshal.BooleanType'.freeze,
+    :bytes             => 'org.apache.cassandra.db.marshal.BytesType'.freeze,
+    :composite         => 'org.apache.cassandra.db.marshal.CompositeType'.freeze,
+    :counter           => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze,
+    :counter_column    => 'org.apache.cassandra.db.marshal.CounterColumnType'.freeze,
+    :date              => 'org.apache.cassandra.db.marshal.DateType'.freeze,
+    :decimal           => 'org.apache.cassandra.db.marshal.DecimalType'.freeze,
+    :double            => 'org.apache.cassandra.db.marshal.DoubleType'.freeze,
+    :dynamic_composite => 'org.apache.cassandra.db.marshal.DynamicCompositeType'.freeze,
+    :float             => 'org.apache.cassandra.db.marshal.FloatType'.freeze,
+    :int32             => 'org.apache.cassandra.db.marshal.Int32Type'.freeze,
+    :int               => 'org.apache.cassandra.db.marshal.IntegerType'.freeze,
+    :integer           => 'org.apache.cassandra.db.marshal.IntegerType'.freeze,
+    :lexical_uuid      => 'org.apache.cassandra.db.marshal.LexicalUUIDType'.freeze,
+    :long              => 'org.apache.cassandra.db.marshal.LongType'.freeze,
+    :reversed          => 'org.apache.cassandra.db.marshal.ReversedType'.freeze,
+    :time_uuid         => 'org.apache.cassandra.db.marshal.TimeUUIDType'.freeze,
+    :utf8              => 'org.apache.cassandra.db.marshal.UTF8Type'.freeze,
+    :uuid              => 'org.apache.cassandra.db.marshal.UUIDType'.freeze
   }.freeze
   
   INDEX_OPERATORS = {
