@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-require 'java'
+require 'eurydice/column_enumerator'
 require 'eurydice/pelops'
 
 module Eurydice

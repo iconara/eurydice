@@ -113,25 +113,15 @@ module Eurydice
         nil
       end
       
-      def each_column(row_key, options={})
-        thrift_exception_handler do
-          reversed = options.fetch(:reversed, false)
-          batch_size = options.fetch(:batch_size, 100)
-          start_beyond = options.fetch(:start_beyond, nil)
-          start_beyond = to_pelops_bytes(start_beyond) if start_beyond
-          selector = @keyspace.create_selector
-          iterator = selector.iterate_columns_from_row(@name, to_pelops_bytes(row_key), start_beyond, reversed, batch_size, get_cl(options))
-          if block_given?
-            iterator.each do |column|
-              yield column_to_kv(column, options)
-            end
-          else
-            Enumerator.new do |y|
-              iterator.each do |column|
-                y << column_to_kv(column, options)
-              end
-            end
-          end
+      def each_column(row_key, options={}, &block)
+        new_options = options.dup
+        new_options[:from_column] = options.delete(:start_beyond) if options.key?(:start_beyond)
+        new_options[:max_column_count] = options.delete(:batch_size) if options.key?(:batch_size)
+        enum = ColumnEnumerator.new(self, row_key, new_options)
+        if block_given?
+          enum.each(&block)
+        else
+          enum
         end
       end
       
