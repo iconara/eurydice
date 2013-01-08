@@ -108,6 +108,8 @@ module Eurydice
             raise EurydiceError, e.cause.message, e.backtrace
           when Thrift::TTransportException, ::Pelops::TimedOutException
             raise TimeoutError, e.cause.message, e.backtrace
+          when java.net.ConnectException
+            raise ConnectionError, e.cause.message, e.backtrace
           end
         end
         case e

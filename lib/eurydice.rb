@@ -5,6 +5,7 @@ require 'eurydice/pelops'
 
 module Eurydice
   class EurydiceError < StandardError; end
+  class ConnectionError < EurydiceError; end
   class InvalidRequestError < EurydiceError; end
   class KeyspaceExistsError < InvalidRequestError; end
   class NotFoundError < EurydiceError; end
