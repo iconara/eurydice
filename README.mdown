@@ -6,10 +6,10 @@ See the `examples` directory and the specs for usage.
 
 ## Installation & requirements
 
-Tested with JRuby 1.6.2 in 1.9 mode and Cassandra 0.8.1.
+Tested with the latest 1.6.x and 1.7.x versions of JRuby, against the current Datastax Community Edition (1.1.x) [on Travis](https://travis-ci.org/iconara/eurydice), and against 1.2.x regularly.
 
     gem install eurydice
-    
+
 This will also install two dependencies: `pelops-jars` and `cassandra-jars` which contain the Pelops and Cassandra JAR files.
 
 ## Contributors
