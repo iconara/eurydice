@@ -1,1 +1,1 @@
-rvm --create use jruby-1.6.5@eurydice
+rvm --create use jruby-1.7.2@eurydice
