@@ -6,7 +6,7 @@ module Eurydice
     describe Keyspace do
       before :all do
         @keyspace_name = "eurydice_test_space_#{rand(1000)}"
-        @cluster = Eurydice::Astyanax.connect
+        @cluster = Eurydice::Astyanax.connect(host: ENV['CASSANDRA_HOST'])
         if @cluster.keyspaces.include?(@keyspace_name)
           @cluster.keyspace(@keyspace_name).drop!
         end

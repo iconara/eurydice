@@ -5,7 +5,7 @@ module Eurydice
   module Astyanax
     describe Cluster do
       before :all do
-        @cluster = Eurydice::Astyanax.connect
+        @cluster = Eurydice::Astyanax.connect(host: ENV['CASSANDRA_HOST'])
       end
         
       it_behaves_like 'Cluster', @cluster

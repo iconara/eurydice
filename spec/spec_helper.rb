@@ -1,5 +1,7 @@
 $: << File.expand_path('../../lib', __FILE__)
 
+ENV['CASSANDRA_HOST'] ||= 'localhost'
+
 require 'bundler/setup'
 require 'eurydice/pelops'
 
