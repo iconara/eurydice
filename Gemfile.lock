@@ -2,7 +2,16 @@ PATH
   remote: .
   specs:
     eurydice (1.2.3-java)
+      astyanax-jars (>= 0.8.0)
       pelops-jars (>= 1.3.0)
+
+PATH
+  remote: ../jar-gems/astyanax-jars
+  specs:
+    astyanax-jars (0.8.10.1-java)
+      cassandra-jars (~> 1.0)
+      guava-jars (~> 11)
+      joda-time-jars (~> 2.0)
 
 GEM
   remote: http://rubygems.org/
@@ -10,6 +19,8 @@ GEM
     bouncy-castle-java (1.5.0146.1)
     cassandra-jars (1.0.0-java)
     diff-lcs (1.1.3)
+    guava-jars (11.0.1-java)
+    joda-time-jars (2.0.0-java)
     jruby-openssl (0.7.4)
       bouncy-castle-java
     pelops-jars (1.3.0-java)
@@ -28,6 +39,7 @@ PLATFORMS
   java
 
 DEPENDENCIES
+  astyanax-jars!
   eurydice!
   jruby-openssl
   rake

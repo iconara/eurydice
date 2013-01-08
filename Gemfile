@@ -1,5 +1,7 @@
 source :rubygems
 
+gem 'astyanax-jars', :path => '../jar-gems/astyanax-jars'
+
 gemspec
 
 group :development do
