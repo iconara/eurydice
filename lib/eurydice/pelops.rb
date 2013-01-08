@@ -110,6 +110,10 @@ module Eurydice
             raise TimeoutError, e.cause.message, e.backtrace
           end
         end
+        case e
+        when ::Pelops::NotFoundException
+          raise NotFoundError, e.message, e.backtrace
+        end
         raise e
       end
     
