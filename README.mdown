@@ -6,7 +6,7 @@ See the `examples` directory and the specs for usage.
 
 ## Installation & requirements
 
-Tested with the latest 1.6.x and 1.7.x versions of JRuby, against the current Datastax Community Edition (1.1.x) [on Travis](https://travis-ci.org/iconara/eurydice), and against 1.2.x regularly.
+Tested with the latest 1.6.x and 1.7.x versions of JRuby, against the current Datastax Community Edition (1.2.x) [on Travis](https://travis-ci.org/iconara/eurydice).
 
     gem install eurydice
 
