@@ -4,7 +4,34 @@ require_relative '../spec_helper'
 
 
 module Eurydice
-  describe ColumnEnumerator do
+  class FakeColumnFamily
+    def initialize
+    end
+
+    def get(row_key, options)
+      if row_key == 'the_row'
+        if options[:max_column_count] == 3
+          if options[:reversed]
+            case options[:from_column]
+            when ''  then {'g' => 7, 'f' => 6, 'e' => 5}
+            when 'e' then {'e' => 5, 'd' => 4, 'c' => 3, 'b' => 2}
+            when 'b' then {'b' => 2, 'a' => 1}
+            when 'a' then {'a' => 1}
+            end
+          else
+            case options[:from_column]
+            when "\0" then {'a' => 1, 'b' => 2, 'c' => 3}
+            when 'c'  then {'c' => 3, 'd' => 4, 'e' => 5, 'f' => 6}
+            when 'f'  then {'f' => 6, 'g' => 7}
+            when 'g'  then {'g' => 7}
+            end
+          end
+        end
+      end
+    end
+  end
+
+  shared_examples_for 'a column enumerator' do
     let :column_family do
       double(:column_family)
     end
@@ -13,23 +40,7 @@ module Eurydice
       describe '#next' do
         context 'in the basic case' do
           let :enumerator do
-            described_class.new(column_family, 'the_row', max_column_count: 3)
-          end
-
-          let :slices do
-            [
-              {'a' => 1, 'b' => 2, 'c' => 3},
-              {'c' => 3, 'd' => 4, 'e' => 5, 'f' => 6},
-              {'f' => 6, 'g' => 7},
-              {'g' => 7},
-            ]
-          end
-
-          before do
-            column_family.stub(:get).with('the_row', max_column_count: 3, from_column: "\0").and_return(slices[0].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'c').and_return(slices[1].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'f').and_return(slices[2].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'g').and_return(slices[3].dup)
+            described_class.new(FakeColumnFamily.new, 'the_row', max_column_count: 3)
           end
 
           it 'returns the first column of the row' do
@@ -62,23 +73,7 @@ module Eurydice
 
         context 'when enumerating in reverse' do
           let :enumerator do
-            described_class.new(column_family, 'the_row', max_column_count: 3, reversed: true)
-          end
-
-          let :slices do
-            [
-              {'g' => 7, 'f' => 6, 'e' => 5},
-              {'e' => 5, 'd' => 4, 'c' => 3, 'b' => 2},
-              {'b' => 2, 'a' => 1},
-              {'a' => 1}
-            ]
-          end
-
-          before do
-            column_family.stub(:get).with('the_row', max_column_count: 3, reversed: true, from_column: '').and_return(slices[0].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, reversed: true, from_column: 'e').and_return(slices[1].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, reversed: true, from_column: 'b').and_return(slices[2].dup)
-            column_family.stub(:get).with('the_row', max_column_count: 3, reversed: true, from_column: 'a').and_return(slices[3].dup)
+            described_class.new(FakeColumnFamily.new, 'the_row', max_column_count: 3, reversed: true)
           end
 
           it 'returns the last column of the row' do
@@ -152,30 +147,30 @@ module Eurydice
         context 'with query options'
         context 'when transport errors occur'
       end
+
+      describe '#rewind' do
+        let :enumerator do
+          described_class.new(FakeColumnFamily.new, 'the_row', max_column_count: 3)
+        end
+
+        it 'resets the enumerator so that it can be used again' do
+          first_results = 7.times.map { enumerator.next }
+          enumerator.rewind
+          second_results = 7.times.map { enumerator.next }
+          first_results.should == second_results
+        end
+      end
     end
 
     context 'as an Enumerable' do
-      let :slices do
-        [
-          {'a' => 1, 'b' => 2, 'c' => 3},
-          {'c' => 3, 'd' => 4, 'e' => 5, 'f' => 6},
-          {'f' => 6, 'g' => 7},
-          {'g' => 7},
-        ]
-      end
-
-      before do
-        column_family.stub(:get).with('the_row', max_column_count: 3, from_column: "\0").and_return(slices[0].dup)
-        column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'c').and_return(slices[1].dup)
-        column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'f').and_return(slices[2].dup)
-        column_family.stub(:get).with('the_row', max_column_count: 3, from_column: 'g').and_return(slices[3].dup)
+      let :enumerable do
+        described_class.new(FakeColumnFamily.new, 'the_row', max_column_count: 3)
       end
 
       describe '#each' do
         it 'returns each column of the row in order' do
           columns = []
-          enumerator = described_class.new(column_family, 'the_row', max_column_count: 3)
-          enumerator.each do |k, v|
+          enumerable.each do |k, v|
             columns << [k, v]
           end
           columns = [['a', 1], ['b', 2], ['c', 3], ['d', 4], ['e', 5], ['f', 6], ['g', 7]]
@@ -185,11 +180,18 @@ module Eurydice
       describe '#map' do
         it 'returns each column of the row in order' do
           columns = []
-          enumerator = described_class.new(column_family, 'the_row', max_column_count: 3)
-          columns = enumerator.map { |k, v| v }
+          columns = enumerable.map { |k, v| v }
           columns = [1, 2, 3, 4, 5, 6, 7]
         end
       end
     end
+  end
+
+  describe ColumnEnumerator do
+    it_behaves_like 'a column enumerator'
+  end
+
+  describe ConcurrentColumnEnumerator do
+    it_behaves_like 'a column enumerator'
   end
 end
