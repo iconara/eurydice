@@ -6,7 +6,6 @@ module Eurydice
 
     def initialize(column_family, row_key, options={})
       @column_family, @row_key, @options = column_family, row_key, DEFAULT_OPTIONS.merge(options)
-      # @transformer = @options.delete(:transformer)
       @max_retries = @options.delete(:max_retries)
       rewind
     end

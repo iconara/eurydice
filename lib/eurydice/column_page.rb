@@ -1,7 +1,6 @@
 # encoding: utf-8
 
 module Eurydice
-
   class ColumnPage
     include Enumerable
 
@@ -76,7 +75,6 @@ module Eurydice
   end
 
   class ReverseColumnPage < ColumnPage
-
     def last?
       false
     end
