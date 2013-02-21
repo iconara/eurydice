@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 require 'eurydice/column_enumerator'
+require 'eurydice/column_page'
 require 'eurydice/pelops'
 
 module Eurydice
