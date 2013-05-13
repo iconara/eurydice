@@ -13,7 +13,7 @@ module Eurydice
         @cluster = cluster
         @pool_name = pool_name
         @driver = driver
-        @batch_key = "#{@name}-batch"
+        @batch_key = "#{@name}-batch-#{object_id}"
       end
     
       def definition(reload=false)
