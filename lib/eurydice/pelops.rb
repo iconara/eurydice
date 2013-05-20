@@ -51,11 +51,13 @@ module Eurydice
       def empty_pelops_bytes
         ::Pelops::Bytes::EMPTY
       end
-      
+
+      BYTES_FROM_LONG_METHOD = ::Pelops::Bytes.java_method(:fromLong, [Java::long])
+
       def to_pelops_bytes(obj, type=nil)
         case type
         when :long
-          ::Pelops::Bytes.from_long(obj)
+          BYTES_FROM_LONG_METHOD.call(obj)
         else
           ::Pelops::Bytes.new(obj.to_s.to_java_bytes)
         end
