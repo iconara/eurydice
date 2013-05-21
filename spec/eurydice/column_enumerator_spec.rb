@@ -61,7 +61,7 @@ module Eurydice
             7.times do
               columns << enumerator.next
             end
-            columns = [['a', 1], ['b', 2], ['c', 3], ['d', 4], ['e', 5], ['f', 6], ['g', 7]]
+            columns.should == [['a', 1], ['b', 2], ['c', 3], ['d', 4], ['e', 5], ['f', 6], ['g', 7]]
           end
 
           it 'raises StopIteration when all columns have been returned' do
