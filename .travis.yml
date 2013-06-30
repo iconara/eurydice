@@ -1,18 +1,12 @@
 language: ruby
 script: 'rspec spec'
+before_install:
+  - sudo sh -c "echo 'JVM_OPTS=\"\${JVM_OPTS} -Djava.net.preferIPv4Stack=false\"' >> /usr/local/cassandra/conf/cassandra-env.sh"
+  - sudo service cassandra start
 rvm:
-  # - jruby-19mode
+  - jruby-19mode
   - jruby-head
 jdk:
   - openjdk7
-  # - oraclejdk7
-  # - openjdk6
-services:
-  - cassandra
-before_script:
-  - 'cat /etc/cassandra/cassandra.yaml'
-  - 'cat /etc/init.d/cassandra'
-  - 'cat /usr/local/cassandra/conf/log4j-server.properties'
-  - 'cat /var/log/cassandra/system.log'
-  - '/etc/init.d/cassandra status'
-  - 'CASSANDRA_CONF=/etc/cassandra /usr/local/cassandra/bin/nodetool status'
+  - oraclejdk7
+  - openjdk6
