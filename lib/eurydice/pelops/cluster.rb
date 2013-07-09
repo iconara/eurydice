@@ -18,7 +18,9 @@ module Eurydice
       def keyspace(keyspace_name, options={})
         pool_name = options.fetch(:pool_name, "eurydice_#{keyspace_name}_pool")
         create = options.fetch(:create, true)
-        @driver.add_pool(pool_name, @cluster, keyspace_name)
+        unless @driver.get_db_conn_pool(pool_name)
+          @driver.add_pool(pool_name, @cluster, keyspace_name)
+        end
         keyspace = Keyspace.new(keyspace_name, @cluster, pool_name, @driver)
         keyspace.create! if create && !keyspace.exists?
         keyspace
